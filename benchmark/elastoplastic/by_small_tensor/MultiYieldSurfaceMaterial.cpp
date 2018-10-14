@@ -35,7 +35,7 @@
 #include "MultiYieldSurfaceMaterial.h"
 // #include <Information.h>
 // #include <OPS_Globals.h>
-//#include <stresstensor.h>
+//#include <tensor2<float,3,3>.h>
 //#include <Vector.h>
 //#include <stresst.h>
 //#include <straint.h>
@@ -47,21 +47,19 @@ using namespace std; using namespace smalltensor;
 #define BRENT_MAXITER 20
 #define BRENT_TOLERANCE 1e-6
 
-const stresstensor MultiYieldSurfaceMaterial::ZeroStrain;
-const stresstensor MultiYieldSurfaceMaterial::ZeroStress;
-const stresstensor MultiYieldSurfaceMaterial::kronecker_delta("identity");
-stifftensor MultiYieldSurfaceMaterial::Ee;
-stifftensor MultiYieldSurfaceMaterial::Eep;
-// stresstensor vonMises_multi_surface::D(6, 6); 
+const tensor2<float,3,3> MultiYieldSurfaceMaterial::ZeroStrain;
+const tensor2<float,3,3> MultiYieldSurfaceMaterial::ZeroStress;
+const tensor2<float,3,3> MultiYieldSurfaceMaterial::kronecker_delta("identity");
+tensor4<float,3,3,3,3> MultiYieldSurfaceMaterial::Ee;
+tensor4<float,3,3,3,3> MultiYieldSurfaceMaterial::Eep;
+// tensor2<float,3,3> vonMises_multi_surface::D(6, 6); 
 
 
-stresstensor MultiYieldSurfaceMaterial::errMatrix ;
-VECT3 MultiYieldSurfaceMaterial::errVector   ;
-stresstensor MultiYieldSurfaceMaterial::errTensor  ;
-stifftensor MultiYieldSurfaceMaterial::errTensor4  ;
-stresstensor MultiYieldSurfaceMaterial::errTensor2  ;
-stresstensor MultiYieldSurfaceMaterial::errstresstensor;
-stresstensor MultiYieldSurfaceMaterial::errstraintensor;
+tensor2<float,3,3> MultiYieldSurfaceMaterial::errMatrix ;
+tensor1<float,3> MultiYieldSurfaceMaterial::errVector   ;
+tensor2<float,3,3> MultiYieldSurfaceMaterial::errTensor  ;
+tensor4<float,3,3,3,3> MultiYieldSurfaceMaterial::errTensor4  ;
+tensor2<float,3,3> MultiYieldSurfaceMaterial::errTensor2  ;
 // Vector  MultiYieldSurfaceMaterial::errVectorVector(0.0);
 MultiYieldSurfaceMaterial_Constitutive_Integration_Method MultiYieldSurfaceMaterial::constitutive_integration_method(MultiYieldSurfaceMaterial_Constitutive_Integration_Method::Not_Set);     //
 double MultiYieldSurfaceMaterial::f_relative_tol(-1);
@@ -135,9 +133,9 @@ MultiYieldSurfaceMaterial::~MultiYieldSurfaceMaterial()
 //================================================================================
 // Set the Total Strain, usually call by element
 //================================================================================
-int MultiYieldSurfaceMaterial::setTrialStrain( const stresstensor &strain )
+int MultiYieldSurfaceMaterial::setTrialStrain( const tensor2<float,3,3> &strain )
 {
-    stresstensor strain_incre_;
+    tensor2<float,3,3> strain_incre_;
     strain_incre_ *= 0;
     iterate_strain(i, j) = strain(i,j);
     strain_incre_(i, j) = strain(i, j) - converge_commit_strain(i, j);
@@ -148,7 +146,7 @@ int MultiYieldSurfaceMaterial::setTrialStrain( const stresstensor &strain )
 // ================================================================================
 // Set the Increment Strain, usually call by element
 // ================================================================================
-int MultiYieldSurfaceMaterial::setTrialStrainIncr( stresstensor const& strain_increment ){
+int MultiYieldSurfaceMaterial::setTrialStrainIncr( tensor2<float,3,3> const& strain_increment ){
     iterate_strain(i, j) = converge_commit_strain(i, j) + strain_increment(i, j);
     return compute_stress(strain_increment);
 }
@@ -156,7 +154,7 @@ int MultiYieldSurfaceMaterial::setTrialStrainIncr( stresstensor const& strain_in
 // ================================================================================
 // Compute the Stress from the Increment Strain
 // ================================================================================
-int MultiYieldSurfaceMaterial::compute_stress(stresstensor const& strain_incr, int Nsubsteps  ){
+int MultiYieldSurfaceMaterial::compute_stress(tensor2<float,3,3> const& strain_incr, int Nsubsteps  ){
     if (iterate_N_active > TNYS ){
         cerr<< "MultiYieldSurfaceMaterial::compute_stress " <<endl;
         cerr<< "Exceed the length of alpha_vec " <<endl;
@@ -168,7 +166,7 @@ int MultiYieldSurfaceMaterial::compute_stress(stresstensor const& strain_incr, i
     
     for (int isub = 0; isub < Nsubsteps; ++isub)
     {
-        stresstensor strain_increment;
+        tensor2<float,3,3> strain_increment;
         strain_increment(i,j) = strain_incr(i,j)/Nsubsteps;
 
         saveIterateState();
@@ -176,10 +174,10 @@ int MultiYieldSurfaceMaterial::compute_stress(stresstensor const& strain_incr, i
         if(isub == 0){
             update_modulus(0, converge_commit_stress);
         }
-        stresstensor PredictStress;
+        tensor2<float,3,3> PredictStress;
         PredictStress(i,j) = converge_commit_stress(i,j) + Ee(i,j,k,l) * strain_increment(k,l);
         double curr_radius = yield_size[iterate_N_active];
-        stresstensor curr_alpha = iterate_alpha_vec[iterate_N_active];
+        tensor2<float,3,3> curr_alpha = iterate_alpha_vec[iterate_N_active];
         if(iterate_N_active == 0){
             curr_radius = yield_size[1];
             curr_alpha = iterate_alpha_vec[1];
@@ -237,7 +235,7 @@ int MultiYieldSurfaceMaterial::compute_stress(stresstensor const& strain_incr, i
                     {
                         double intersection_factor = zbrentstress(iterate_N_active, converge_commit_stress, PredictStress, 0.0, 1.0, BRENT_TOLERANCE );
                         // cout<< "intersection_factor = " << intersection_factor <<endl;
-                        stresstensor intersection_stress;
+                        tensor2<float,3,3> intersection_stress;
                         intersection_stress(i, j) = converge_commit_stress(i, j) * (1 - intersection_factor) + PredictStress(i, j) * intersection_factor;
 
                         update_modulus(iterate_N_active, intersection_stress);
@@ -294,7 +292,7 @@ int MultiYieldSurfaceMaterial::compute_stress(stresstensor const& strain_incr, i
                 else
                 {
                     double next_radius = yield_size[iterate_N_active+1];
-                    stresstensor next_alpha = iterate_alpha_vec[iterate_N_active+1];
+                    tensor2<float,3,3> next_alpha = iterate_alpha_vec[iterate_N_active+1];
                     next_yf_val = yield_surface_val(iterate_stress, next_alpha, next_radius) ; 
 
                     // If NO overshooting the next larger yield surface
@@ -351,19 +349,19 @@ int MultiYieldSurfaceMaterial::compute_stress(stresstensor const& strain_incr, i
 // ================================================================================
 // After the yield, Update the Stress 
 // ================================================================================
-void MultiYieldSurfaceMaterial::update_stress(stresstensor& target_stress, double& lambda, int N_active_ys, stresstensor const& normal_refer_stress){
+void MultiYieldSurfaceMaterial::update_stress(tensor2<float,3,3>& target_stress, double& lambda, int N_active_ys, tensor2<float,3,3> const& normal_refer_stress){
     // df_dsigma 
-    stresstensor curr_nn = df_dsigma(N_active_ys, normal_refer_stress);
+    tensor2<float,3,3> curr_nn = df_dsigma(N_active_ys, normal_refer_stress);
 
     // df_dalpha
-    stresstensor curr_xi = df_dalpha(N_active_ys, normal_refer_stress);
+    tensor2<float,3,3> curr_xi = df_dalpha(N_active_ys, normal_refer_stress);
 
     // alpha_direction
-    stresstensor bar_alpha = alpha_bar(N_active_ys, normal_refer_stress);
+    tensor2<float,3,3> bar_alpha = alpha_bar(N_active_ys, normal_refer_stress);
 
     // yield_surface_val
     double curr_radius = yield_size[N_active_ys];
-    stresstensor curr_alpha = iterate_alpha_vec[N_active_ys];
+    tensor2<float,3,3> curr_alpha = iterate_alpha_vec[N_active_ys];
     double yf_val = yield_surface_val(target_stress, curr_alpha, curr_radius);
 
     // get lambda
@@ -381,14 +379,14 @@ void MultiYieldSurfaceMaterial::update_stress(stresstensor& target_stress, doubl
 // ================================================================================
 // After the yield, Update the current active yield surface (alpha)
 // ================================================================================
-void MultiYieldSurfaceMaterial::update_current_yield_surface(double& the_yf_val, int N_active_ys, double lambda, stresstensor const& stress){
+void MultiYieldSurfaceMaterial::update_current_yield_surface(double& the_yf_val, int N_active_ys, double lambda, tensor2<float,3,3> const& stress){
     // df_dsigma 
-    stresstensor curr_nn = df_dsigma(N_active_ys, stress);
+    tensor2<float,3,3> curr_nn = df_dsigma(N_active_ys, stress);
 
     // rate of alpha
-    stresstensor bar_alpha = alpha_bar(N_active_ys, stress);
+    tensor2<float,3,3> bar_alpha = alpha_bar(N_active_ys, stress);
     // update the alpha
-    stresstensor curr_alpha = iterate_alpha_vec[N_active_ys] ; 
+    tensor2<float,3,3> curr_alpha = iterate_alpha_vec[N_active_ys] ; 
     curr_alpha(i,j) = curr_alpha(i,j) + lambda * bar_alpha(i,j) ;
     iterate_alpha_vec[N_active_ys] = curr_alpha ; 
 
@@ -410,16 +408,16 @@ void MultiYieldSurfaceMaterial::update_current_yield_surface(double& the_yf_val,
 // ================================================================================
 // After the yield, Update the inner yield surfaces (alpha) 
 // ================================================================================
-void MultiYieldSurfaceMaterial::update_inner_yield_surfaces(int N_active_ys, stresstensor const& stress){
+void MultiYieldSurfaceMaterial::update_inner_yield_surfaces(int N_active_ys, tensor2<float,3,3> const& stress){
 
     for (int inner = 0; inner < N_active_ys; ++inner)
     {
         double pp = -1./3. * (stress(0,0)+stress(1,1)+stress(2,2)) ;
-        stresstensor DevStress;
+        tensor2<float,3,3> DevStress;
         DevStress(i,j) = stress(i,j) + pp * kronecker_delta(i,j) ;
-        stresstensor curr_alpha = iterate_alpha_vec[N_active_ys] ;
+        tensor2<float,3,3> curr_alpha = iterate_alpha_vec[N_active_ys] ;
         double curr_radius = yield_size[N_active_ys] ;
-        stresstensor the_alpha = iterate_alpha_vec[inner] ;
+        tensor2<float,3,3> the_alpha = iterate_alpha_vec[inner] ;
         double the_radius = yield_size[inner] ;
         if(curr_radius == 0){
             cerr<< "MultiYieldSurfaceMaterial::update_inner_yield_surfaces() " <<endl;
@@ -440,13 +438,13 @@ void MultiYieldSurfaceMaterial::update_inner_yield_surfaces(int N_active_ys, str
 }
 
 
-void MultiYieldSurfaceMaterial::update_failure_surface(stresstensor const& stress){
+void MultiYieldSurfaceMaterial::update_failure_surface(tensor2<float,3,3> const& stress){
     // 
-    stresstensor last_alpha = iterate_alpha_vec[TNYS] ; 
-    stresstensor curr_nn = df_dsigma(TNYS, stress);
+    tensor2<float,3,3> last_alpha = iterate_alpha_vec[TNYS] ; 
+    tensor2<float,3,3> curr_nn = df_dsigma(TNYS, stress);
     double pp = - 1./3. * (stress(0,0) + stress(1,1) + stress(2,2));
 
-    stresstensor DevStress;
+    tensor2<float,3,3> DevStress;
     DevStress(i,j) = stress(i,j) + pp * kronecker_delta(i,j) ;
     // direction
     curr_nn(i,j) = curr_nn(i,j) / sqrt(curr_nn(k,l) * curr_nn(k,l)) ; 
@@ -466,9 +464,9 @@ void MultiYieldSurfaceMaterial::update_failure_surface(stresstensor const& stres
 // ================================================================================
 // After the yield, Update the plastic strain
 // ================================================================================
-void MultiYieldSurfaceMaterial::update_plastic_strain(stresstensor& pstrain, double lambda, int N_active_ys, stresstensor const& stress ){
+void MultiYieldSurfaceMaterial::update_plastic_strain(tensor2<float,3,3>& pstrain, double lambda, int N_active_ys, tensor2<float,3,3> const& stress ){
     // df_dsigma and associate flow 
-    stresstensor curr_nn = df_dsigma(N_active_ys, stress);
+    tensor2<float,3,3> curr_nn = df_dsigma(N_active_ys, stress);
 
     // lambda * plastic_flow
     pstrain(i,j) = pstrain(i,j) + lambda * curr_nn(i,j) ; 
@@ -477,32 +475,32 @@ void MultiYieldSurfaceMaterial::update_plastic_strain(stresstensor& pstrain, dou
 // ================================================================================
 // After the overshooting, Correct the overshooting stress
 // ================================================================================
-void MultiYieldSurfaceMaterial::correct_update_stress(stresstensor& stress, double& lambda1, double& lambda2, int N_active_ys){
+void MultiYieldSurfaceMaterial::correct_update_stress(tensor2<float,3,3>& stress, double& lambda1, double& lambda2, int N_active_ys){
     // df_dalpha
-    stresstensor curr_xi = df_dalpha(N_active_ys, stress);
+    tensor2<float,3,3> curr_xi = df_dalpha(N_active_ys, stress);
 
     // alpha_direction
-    stresstensor bar_alpha = alpha_bar(N_active_ys, stress);
+    tensor2<float,3,3> bar_alpha = alpha_bar(N_active_ys, stress);
 
     // curr_H_prime
     double next_radius = yield_size[N_active_ys + 1];
-    stresstensor next_alpha = iterate_alpha_vec[N_active_ys + 1];
+    tensor2<float,3,3> next_alpha = iterate_alpha_vec[N_active_ys + 1];
     double next_yf_val = yield_surface_val(stress, next_alpha, next_radius) ; 
     double curr_H_prime = - curr_xi(i,j) * bar_alpha(i,j) ; 
 
     // next_bar_alpha
-    stresstensor next_bar_alpha;
+    tensor2<float,3,3> next_bar_alpha;
     next_bar_alpha = alpha_bar(N_active_ys + 1,  stress);
 
     // next_H_prime
-    stresstensor next_xi = df_dalpha(N_active_ys + 1,  stress);
+    tensor2<float,3,3> next_xi = df_dalpha(N_active_ys + 1,  stress);
     double next_H_prime = - next_xi(i,j) * next_bar_alpha(i,j) ; 
 
     // curr_nn
-    stresstensor curr_nn = df_dsigma(N_active_ys,  stress);
+    tensor2<float,3,3> curr_nn = df_dsigma(N_active_ys,  stress);
 
     // next_H0
-    stresstensor next_nn = df_dsigma(N_active_ys + 1,  stress);
+    tensor2<float,3,3> next_nn = df_dsigma(N_active_ys + 1,  stress);
     double next_H0 = next_nn(i,j) * Ee(i,j,k,l) * next_nn(k,l) ; 
 
     // lambda1 
@@ -529,12 +527,12 @@ void MultiYieldSurfaceMaterial::correct_update_stress(stresstensor& stress, doub
 // ================================================================================
 // After the overshooting, Correct the plastic strain
 // ================================================================================
-void MultiYieldSurfaceMaterial::correct_update_plastic_strain(stresstensor& pstrain, double lambda1, double lambda2, int N_active_ys, stresstensor const& stress ){
+void MultiYieldSurfaceMaterial::correct_update_plastic_strain(tensor2<float,3,3>& pstrain, double lambda1, double lambda2, int N_active_ys, tensor2<float,3,3> const& stress ){
     // curr_nn
-    stresstensor curr_nn = df_dsigma(N_active_ys,  stress);
+    tensor2<float,3,3> curr_nn = df_dsigma(N_active_ys,  stress);
 
     // next_nn
-    stresstensor next_nn = df_dsigma(N_active_ys + 1,  stress);
+    tensor2<float,3,3> next_nn = df_dsigma(N_active_ys + 1,  stress);
 
     // lambda * plastic_flow
     pstrain(i,j) = pstrain(i,j) 
@@ -844,8 +842,8 @@ bool MultiYieldSurfaceMaterial::set_constitutive_integration_method(int method, 
 //================================================================================
 double MultiYieldSurfaceMaterial::zbrentstress(
                     int num_active_ys,
-                    const stresstensor& start_stress,
-                    const stresstensor& end_stress,
+                    const tensor2<float,3,3>& start_stress,
+                    const tensor2<float,3,3>& end_stress,
                     double x1, double x2, double tol) 
 {
     // using namespace ClassicElastoplasticityGlobals;
@@ -870,13 +868,13 @@ double MultiYieldSurfaceMaterial::zbrentstress(
     // double fa = func(start_stress, end_stress, *ptr_material_parameter, a);
     // double fb = func(start_stress, end_stress, *ptr_material_parameter, b);
 
-    static stresstensor sigma_a;
-    static stresstensor sigma_b;
+    static tensor2<float,3,3> sigma_a;
+    static tensor2<float,3,3> sigma_b;
 
     sigma_a(i, j) = start_stress(i, j) * (1 - a)  + end_stress(i, j) * a;
     sigma_b(i, j) = start_stress(i, j) * (1 - b)  + end_stress(i, j) * b;
 
-    stresstensor curr_alpha = iterate_alpha_vec[num_active_ys];
+    tensor2<float,3,3> curr_alpha = iterate_alpha_vec[num_active_ys];
     double curr_sz = yield_size[num_active_ys];
     double fa = yield_surface_val(sigma_a, curr_alpha, curr_sz);
     double fb = yield_surface_val(sigma_b, curr_alpha, curr_sz);
@@ -998,9 +996,9 @@ double MultiYieldSurfaceMaterial::getNumActiveYS() const {return iterate_N_activ
 double MultiYieldSurfaceMaterial::getTNYS() const {return TNYS;}
 vector<double> const& MultiYieldSurfaceMaterial::getYieldSize() const {return yield_size;}
 vector<double> const& MultiYieldSurfaceMaterial::getHardPara() const {return HardingPara;}
-const stresstensor  &MultiYieldSurfaceMaterial::getStressTensor() const {return iterate_stress;}
-const stresstensor  &MultiYieldSurfaceMaterial::getStrainTensor() const {return iterate_strain;}
-const stresstensor  &MultiYieldSurfaceMaterial::getPlasticStrainTensor() const {return iterate_plastic_strain;}
+const tensor2<float,3,3>  &MultiYieldSurfaceMaterial::getStressTensor() const {return iterate_stress;}
+const tensor2<float,3,3>  &MultiYieldSurfaceMaterial::getStrainTensor() const {return iterate_strain;}
+const tensor2<float,3,3>  &MultiYieldSurfaceMaterial::getPlasticStrainTensor() const {return iterate_plastic_strain;}
 
 
 
@@ -1029,31 +1027,31 @@ void MultiYieldSurfaceMaterial::Print( ostream &s, int flag )
 }
 
 
-void MultiYieldSurfaceMaterial::update_modulus(int num_active_ys, stresstensor const& stress){
+void MultiYieldSurfaceMaterial::update_modulus(int num_active_ys, tensor2<float,3,3> const& stress){
     cerr << "MultiYieldSurfaceMaterial::update_modulus -> Subclass responsability" << endl;
 }
 
-double MultiYieldSurfaceMaterial::yield_surface_val(stresstensor const& stress, stresstensor const& alpha, double radius){
+double MultiYieldSurfaceMaterial::yield_surface_val(tensor2<float,3,3> const& stress, tensor2<float,3,3> const& alpha, double radius){
     cerr << "MultiYieldSurfaceMaterial::yield_surface_val -> Subclass responsability" << endl;
     return 0. ;
 }
 
-stresstensor MultiYieldSurfaceMaterial::df_dsigma(int num_active_ys, stresstensor const& stress){
+tensor2<float,3,3> MultiYieldSurfaceMaterial::df_dsigma(int num_active_ys, tensor2<float,3,3> const& stress){
     cerr << "MultiYieldSurfaceMaterial::df_dsigma -> Subclass responsability" << endl;
     return ZeroStress;
 }
 
-stresstensor MultiYieldSurfaceMaterial::df_dalpha(int num_active_ys, stresstensor const& stress){
+tensor2<float,3,3> MultiYieldSurfaceMaterial::df_dalpha(int num_active_ys, tensor2<float,3,3> const& stress){
     cerr << "MultiYieldSurfaceMaterial::df_dalpha -> Subclass responsability" << endl;
     return ZeroStress;
 }
 
-stresstensor MultiYieldSurfaceMaterial::alpha_bar(int num_active_ys, stresstensor const& stress){
+tensor2<float,3,3> MultiYieldSurfaceMaterial::alpha_bar(int num_active_ys, tensor2<float,3,3> const& stress){
     cerr << "MultiYieldSurfaceMaterial::alpha_bar -> Subclass responsability" << endl;
     return ZeroStress;
 }
 
-stresstensor MultiYieldSurfaceMaterial::plastic_flow_direct(stresstensor const& nn, stresstensor const& stress, int N_active_ys){
+tensor2<float,3,3> MultiYieldSurfaceMaterial::plastic_flow_direct(tensor2<float,3,3> const& nn, tensor2<float,3,3> const& stress, int N_active_ys){
     cerr << "MultiYieldSurfaceMaterial::plastic_flow_direct -> Subclass responsability" << endl;
     return ZeroStress;
 }
@@ -1066,11 +1064,11 @@ MultiYieldSurfaceMaterial *MultiYieldSurfaceMaterial::getCopy(void)
 }
 
     
-stifftensor const& MultiYieldSurfaceMaterial::getTangentTensor(){
+tensor4<float,3,3,3,3> const& MultiYieldSurfaceMaterial::getTangentTensor(){
     cerr << "MultiYieldSurfaceMaterial::getTangentTensor -> Subclass responsability" << endl;
     return Ee;
 }
-void MultiYieldSurfaceMaterial::compute_elastoplastic_tangent(int N_active_ys, stresstensor const& intersection_stress , bool elastic){
+void MultiYieldSurfaceMaterial::compute_elastoplastic_tangent(int N_active_ys, tensor2<float,3,3> const& intersection_stress , bool elastic){
     cerr << "MultiYieldSurfaceMaterial::compute_elastoplastic_tangent -> Subclass responsability" << endl;
 }
 

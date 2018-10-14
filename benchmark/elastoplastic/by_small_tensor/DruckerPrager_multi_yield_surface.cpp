@@ -119,10 +119,10 @@ DruckerPrager_multi_yield_surface::~DruckerPrager_multi_yield_surface()
 // ================================================================================
 // Return the yield surface Value
 // ================================================================================
-double DruckerPrager_multi_yield_surface::yield_surface_val(stresstensor const& stress, stresstensor const& alpha, double yield_sz){
+double DruckerPrager_multi_yield_surface::yield_surface_val(tensor2<float,3,3> const& stress, tensor2<float,3,3> const& alpha, double yield_sz){
 
     double pp = -1./3. * (stress(0,0)+stress(1,1)+stress(2,2)) ;
-    stresstensor s ;
+    tensor2<float,3,3> s ;
     s(i,j) = stress(i,j) + pp * kronecker_delta(i,j) ;
 
     s(i,j) -= pp * alpha(i,j) ;
@@ -135,7 +135,7 @@ double DruckerPrager_multi_yield_surface::yield_surface_val(stresstensor const& 
 // ================================================================================
 // Return the normal to the yield surface w.r.t stress
 // ================================================================================
-stresstensor DruckerPrager_multi_yield_surface::df_dsigma(int N_active_ys, stresstensor const& stress){
+tensor2<float,3,3> DruckerPrager_multi_yield_surface::df_dsigma(int N_active_ys, tensor2<float,3,3> const& stress){
     if (N_active_ys > TNYS )
     {
         cerr<< "DruckerPrager_multi_yield_surface::df_dsigma " <<endl;
@@ -144,14 +144,14 @@ stresstensor DruckerPrager_multi_yield_surface::df_dsigma(int N_active_ys, stres
         cerr<< "alpha_vec.size() " << iterate_alpha_vec.size() <<endl;
         cerr<< "Total NYS " << TNYS <<endl;
     }
-    stresstensor curr_alpha = iterate_alpha_vec[N_active_ys];
+    tensor2<float,3,3> curr_alpha = iterate_alpha_vec[N_active_ys];
     double curr_sz = yield_size[N_active_ys] ;
     double pp = -1./3. * (stress(0,0)+stress(1,1)+stress(2,2)) ;
-    stresstensor DevStress;
+    tensor2<float,3,3> DevStress;
     DevStress(i,j) = stress(i,j) + pp * kronecker_delta(i,j) ;
     DevStress(i,j) -= pp * curr_alpha(i,j) ;
 
-    static stresstensor result;
+    static tensor2<float,3,3> result;
     result *= 0. ;
 
     double den = sqrt(DevStress(i,j) * DevStress(i,j));
@@ -176,7 +176,7 @@ stresstensor DruckerPrager_multi_yield_surface::df_dsigma(int N_active_ys, stres
 // ================================================================================
 // Return the normal to the yield surface w.r.t alpha(backstress)
 // ================================================================================
-stresstensor DruckerPrager_multi_yield_surface::df_dalpha(int N_active_ys, stresstensor const& stress){
+tensor2<float,3,3> DruckerPrager_multi_yield_surface::df_dalpha(int N_active_ys, tensor2<float,3,3> const& stress){
     if (N_active_ys > TNYS )
     {
         cerr<< "DruckerPrager_multi_yield_surface::df_dalpha " <<endl;
@@ -186,13 +186,13 @@ stresstensor DruckerPrager_multi_yield_surface::df_dalpha(int N_active_ys, stres
         cerr<< "Total NYS" << TNYS <<endl;
     }
     // double curr_sz = yield_size[N_active_ys] ;
-    stresstensor curr_alpha = iterate_alpha_vec[N_active_ys];
+    tensor2<float,3,3> curr_alpha = iterate_alpha_vec[N_active_ys];
     double pp = -1./3. * (stress(0,0)+stress(1,1)+stress(2,2)) ;
-    stresstensor DevStress;
+    tensor2<float,3,3> DevStress;
     DevStress(i,j) = stress(i,j) + pp * kronecker_delta(i,j) ;
     DevStress(i,j) -= pp * curr_alpha(i,j) ;
 
-    static stresstensor result;
+    static tensor2<float,3,3> result;
     result *= 0. ;
 
     double den = sqrt(DevStress(i,j) * DevStress(i,j));
@@ -205,8 +205,8 @@ stresstensor DruckerPrager_multi_yield_surface::df_dalpha(int N_active_ys, stres
 // ================================================================================
 // Return the plastic flow direction
 // ================================================================================
-stresstensor DruckerPrager_multi_yield_surface::plastic_flow_direct(stresstensor const& nn, stresstensor const& stress, int N_active_ys ){
-    static stresstensor mm;
+tensor2<float,3,3> DruckerPrager_multi_yield_surface::plastic_flow_direct(tensor2<float,3,3> const& nn, tensor2<float,3,3> const& stress, int N_active_ys ){
+    static tensor2<float,3,3> mm;
     mm *= 0. ;
     // (1) The deviatoric plastic flow is associative. 
     mm = nn;
@@ -219,9 +219,9 @@ stresstensor DruckerPrager_multi_yield_surface::plastic_flow_direct(stresstensor
     // // ==============================================
     // // stress_ratio2 = 3.*J2 / pow(fabs(I1/3.),2);
     // // ==============================================
-    // stresstensor curr_alpha = iterate_alpha_vec[N_active_ys];
+    // tensor2<float,3,3> curr_alpha = iterate_alpha_vec[N_active_ys];
     // double pp = -1./3. * (stress(0,0)+stress(1,1)+stress(2,2)) ;
-    // stresstensor DevStress;
+    // tensor2<float,3,3> DevStress;
     // DevStress(i,j) = stress(i,j) + pp * kronecker_delta(i,j) ;
     // DevStress(i,j) -= pp * curr_alpha(i,j) ;
     // double J2bar = 1.5 * DevStress(i,j) * DevStress(i,j);
@@ -245,8 +245,8 @@ stresstensor DruckerPrager_multi_yield_surface::plastic_flow_direct(stresstensor
 // ================================================================================
 // Return the rate of alpha(backstress)
 // ================================================================================
-stresstensor DruckerPrager_multi_yield_surface::alpha_bar(int N_active_ys, stresstensor const& stress){
-    stresstensor curr_nn;
+tensor2<float,3,3> DruckerPrager_multi_yield_surface::alpha_bar(int N_active_ys, tensor2<float,3,3> const& stress){
+    tensor2<float,3,3> curr_nn;
     double pp = -1./3. * (stress(0,0)+stress(1,1)+stress(2,2)) ;
     if (N_active_ys > (TNYS-1) )
     {
@@ -262,11 +262,11 @@ stresstensor DruckerPrager_multi_yield_surface::alpha_bar(int N_active_ys, stres
     }
     double curr_sz = yield_size[N_active_ys];
     double next_sz = yield_size[N_active_ys+1];
-    stresstensor curr_alpha = iterate_alpha_vec[N_active_ys];
-    stresstensor next_alpha = iterate_alpha_vec[N_active_ys+1];
-    stresstensor DevStress;
+    tensor2<float,3,3> curr_alpha = iterate_alpha_vec[N_active_ys];
+    tensor2<float,3,3> next_alpha = iterate_alpha_vec[N_active_ys+1];
+    tensor2<float,3,3> DevStress;
     DevStress(i,j) = stress(i,j) + pp * kronecker_delta(i,j) ;
-    stresstensor direct;
+    tensor2<float,3,3> direct;
     if(curr_sz == 0){
         cerr<< "DruckerPrager_multi_yield_surface::alpha_bar " <<endl;
         cerr<< "curr_sz == 0 " <<endl;
@@ -310,7 +310,7 @@ stresstensor DruckerPrager_multi_yield_surface::alpha_bar(int N_active_ys, stres
 // //================================================================================
 // // Return the 6*6 Tangent matrix.
 // //================================================================================
-// stresstensor const& DruckerPrager_multi_yield_surface::getTangent(void){
+// tensor2<float,3,3> const& DruckerPrager_multi_yield_surface::getTangent(void){
 //     // double mu2 = E / (1.0 + v);
 //     // double lam = v * mu2 / (1.0 - 2.0 * v);
 //     // double mu  = 0.50 * mu2;
@@ -330,7 +330,7 @@ stresstensor DruckerPrager_multi_yield_surface::alpha_bar(int N_active_ys, stres
 //================================================================================
 // Return the 3*3*3*3 Tangent tensor.
 //================================================================================
-stifftensor const& DruckerPrager_multi_yield_surface::getTangentTensor( void )
+tensor4<float,3,3,3,3> const& DruckerPrager_multi_yield_surface::getTangentTensor( void )
 {
     // update_modulus(iterate_N_active, iterate_stress);
     return Ee;
@@ -339,7 +339,7 @@ stifftensor const& DruckerPrager_multi_yield_surface::getTangentTensor( void )
 //================================================================================
 // Compute the Elastic Tangent Stiffness
 //================================================================================
-void DruckerPrager_multi_yield_surface::update_modulus(int N_active_ys, stresstensor const& stress)
+void DruckerPrager_multi_yield_surface::update_modulus(int N_active_ys, tensor2<float,3,3> const& stress)
 {
     Ee *= 0;
     // =========================================================
@@ -367,11 +367,11 @@ void DruckerPrager_multi_yield_surface::update_modulus(int N_active_ys, stresste
     // }
 }
 
-void DruckerPrager_multi_yield_surface::compute_elastoplastic_tangent(int N_active_ys, stresstensor const& intersection_stress, bool elastic){
-    stresstensor curr_xi = df_dalpha(N_active_ys, intersection_stress);
-    stresstensor bar_alpha = alpha_bar(N_active_ys, intersection_stress);
-    stresstensor curr_nn = df_dsigma(N_active_ys,  intersection_stress);
-    stresstensor curr_mm = plastic_flow_direct( curr_nn,  intersection_stress , N_active_ys);
+void DruckerPrager_multi_yield_surface::compute_elastoplastic_tangent(int N_active_ys, tensor2<float,3,3> const& intersection_stress, bool elastic){
+    tensor2<float,3,3> curr_xi = df_dalpha(N_active_ys, intersection_stress);
+    tensor2<float,3,3> bar_alpha = alpha_bar(N_active_ys, intersection_stress);
+    tensor2<float,3,3> curr_nn = df_dsigma(N_active_ys,  intersection_stress);
+    tensor2<float,3,3> curr_mm = plastic_flow_direct( curr_nn,  intersection_stress , N_active_ys);
     update_modulus(N_active_ys, intersection_stress);
     double denominator = curr_nn(i,j) * Ee(i,j,k,l) * curr_mm(k,l) - curr_xi(o,t) * bar_alpha(o,t);
     // if (denominator == 0 ){
@@ -393,10 +393,10 @@ void DruckerPrager_multi_yield_surface::compute_elastoplastic_tangent(int N_acti
     // double curr_sz = yield_size[N_active_ys];
     // double GG = HardingPara[0];
     // denominator = (12. * GG + 6 * HardingPara[N_active_ys]  ) * pow(1.5 * curr_sz, 2.);
-    // stresstensor curr_alpha = iterate_alpha_vec[N_active_ys];
-    // stresstensor HH;
+    // tensor2<float,3,3> curr_alpha = iterate_alpha_vec[N_active_ys];
+    // tensor2<float,3,3> HH;
     // double pp = - 1. /3. * (intersection_stress(0,0) + intersection_stress(1,1) + intersection_stress(2,2));
-    // stresstensor DevStress;
+    // tensor2<float,3,3> DevStress;
     // DevStress(i,j) = intersection_stress(i,j) + pp * kronecker_delta(i,j);
     // HH(i,j) = 6. * GG * (DevStress(i,j) - curr_alpha(i,j)) ; 
     // Eep(i,j,k,l) = Ee(i,j,k,l) - HH(i,j) * HH(k,l) / denominator ; 
@@ -640,29 +640,29 @@ void DruckerPrager_multi_yield_surface::Print( ostream &s, int flag )
 // int DruckerPrager_multi_yield_surface::getObjectSize()
 // {
 //     int size = 0;
-//     // stresstensor iterate_stress;
+//     // tensor2<float,3,3> iterate_stress;
 //     size += sizeof(double) * iterate_stress.get_size();
-//     // stresstensor iterate_strain;
+//     // tensor2<float,3,3> iterate_strain;
 //     size += sizeof(double) * iterate_strain.get_size();
-//     // stresstensor iterate_plastic_strain;
+//     // tensor2<float,3,3> iterate_plastic_strain;
 //     size += sizeof(double) * iterate_plastic_strain.get_size();
-//     // stresstensor converge_commit_stress;
+//     // tensor2<float,3,3> converge_commit_stress;
 //     size += sizeof(double) * converge_commit_stress.get_size();
-//     // stresstensor converge_commit_strain;
+//     // tensor2<float,3,3> converge_commit_strain;
 //     size += sizeof(double) * converge_commit_strain.get_size();
-//     // stresstensor converge_commit_plastic_strain;
+//     // tensor2<float,3,3> converge_commit_plastic_strain;
 //     size += sizeof(double) * converge_commit_plastic_strain.get_size();
-//     // stresstensor save_iter_stress;
+//     // tensor2<float,3,3> save_iter_stress;
 //     size += sizeof(double) * save_iter_stress.get_size();
-//     // stresstensor save_iter_strain;
+//     // tensor2<float,3,3> save_iter_strain;
 //     size += sizeof(double) * save_iter_strain.get_size();
-//     // stresstensor save_iter_plastic_strain;
+//     // tensor2<float,3,3> save_iter_plastic_strain;
 //     size += sizeof(double) * save_iter_plastic_strain.get_size();
-//     // vector<stresstensor> iterate_alpha_vec ;
+//     // vector<tensor2<float,3,3>> iterate_alpha_vec ;
 //     size += sizeof(double) * iterate_alpha_vec[0].get_size() * iterate_alpha_vec.size() ;
-//     // vector<stresstensor> converge_commit_alpha_vec ;
+//     // vector<tensor2<float,3,3>> converge_commit_alpha_vec ;
 //     size += sizeof(double) * converge_commit_alpha_vec[0].get_size() * converge_commit_alpha_vec.size() ;
-//     // vector<stresstensor> save_iter_alpha_vec ;
+//     // vector<tensor2<float,3,3>> save_iter_alpha_vec ;
 //     size += sizeof(double) * save_iter_alpha_vec[0].get_size() * save_iter_alpha_vec.size() ;
 //     // int iterate_N_active
 //     size += sizeof(iterate_N_active) ;
@@ -704,37 +704,37 @@ void DruckerPrager_multi_yield_surface::Print( ostream &s, int flag )
 
 
 
-//     // stresstensor ZeroStrain;
+//     // tensor2<float,3,3> ZeroStrain;
 //     size += sizeof(double) * ZeroStrain.get_size();
-//     // stresstensor ZeroStress;
+//     // tensor2<float,3,3> ZeroStress;
 //     size += sizeof(double) * ZeroStress.get_size();
-//     // stifftensor Elastic;
+//     // tensor4<float,3,3,3,3> Elastic;
 //     size += sizeof(double) * Ee.get_size();
-//     // stifftensor Elastic;
+//     // tensor4<float,3,3,3,3> Elastic;
 //     size += sizeof(double) * Eep.get_size();
-//     // stresstensor D;
+//     // tensor2<float,3,3> D;
 //     size += sizeof(double) * D.get_size();
-//     // stresstensor kronecker_delta;
+//     // tensor2<float,3,3> kronecker_delta;
 //     size += sizeof(double) * kronecker_delta.get_size();
 
 
 
 
-//     // Index < 'i' > i;
+//     // eindex < 'i' > i;
 //     size += sizeof(i);
-//     // Index < 'j' > j;
+//     // eindex < 'j' > j;
 //     size += sizeof(j);
-//     // Index < 'k' > k;
+//     // eindex < 'k' > k;
 //     size += sizeof(k);
-//     // Index < 'l' > l;
+//     // eindex < 'l' > l;
 //     size += sizeof(l);
-//     // Index < 'o' > o;
+//     // eindex < 'o' > o;
 //     size += sizeof(o);
-//     // Index < 't' > t;
+//     // eindex < 't' > t;
 //     size += sizeof(t);
-//     // Index < 'x' > x;
+//     // eindex < 'x' > x;
 //     size += sizeof(x);
-//     // Index < 'y' > y;
+//     // eindex < 'y' > y;
 //     size += sizeof(y);
 
 //     return size;

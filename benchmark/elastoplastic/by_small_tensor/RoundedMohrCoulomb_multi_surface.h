@@ -88,8 +88,8 @@ public:
 
 
     RoundedMohrCoulomb_multi_surface *getCopy( void );
-    virtual stifftensor const& getTangentTensor( void );       
-    virtual void compute_elastoplastic_tangent( int N_active_ys, stresstensor const& intersection_stress , bool elastic=false );
+    virtual tensor4<float,3,3,3,3> const& getTangentTensor( void );       
+    virtual void compute_elastoplastic_tangent( int N_active_ys, tensor2<float,3,3> const& intersection_stress , bool elastic=false );
     virtual void Print( ostream &s, int flag = 0 );
     virtual const char *getType( void ) const{return "RoundedMohrCoulomb_multi_surface";};
     virtual const char *getClassType( void ) const{return "RoundedMohrCoulomb_multi_surface";};
@@ -105,22 +105,22 @@ public:
 
 
 private:
-    virtual void update_modulus( int num_active_ys, stresstensor const& s );                                   // Compute the Tangent Stiffness
-    virtual double yield_surface_val(stresstensor const& stress, stresstensor const& alpha, double eta);           // Return the yield surface Value
-    virtual stresstensor df_dsigma(int num_active_ys, stresstensor const& stress);                                 // Return the normal to the yield surface w.r.t stress
-    virtual stresstensor df_dalpha(int num_active_ys, stresstensor const& stress);                                 // Return the normal to the yield surface w.r.t alpha(backstress)
-    virtual stresstensor plastic_flow_direct(stresstensor const& nn, stresstensor const& stress, int N_active_ys);     // Return the plastic flow
-    virtual stresstensor alpha_bar(int num_active_ys, stresstensor const& stress);                                 // Return the rate of alpha(backstress)
+    virtual void update_modulus( int num_active_ys, tensor2<float,3,3> const& s );                                   // Compute the Tangent Stiffness
+    virtual double yield_surface_val(tensor2<float,3,3> const& stress, tensor2<float,3,3> const& alpha, double eta);           // Return the yield surface Value
+    virtual tensor2<float,3,3> df_dsigma(int num_active_ys, tensor2<float,3,3> const& stress);                                 // Return the normal to the yield surface w.r.t stress
+    virtual tensor2<float,3,3> df_dalpha(int num_active_ys, tensor2<float,3,3> const& stress);                                 // Return the normal to the yield surface w.r.t alpha(backstress)
+    virtual tensor2<float,3,3> plastic_flow_direct(tensor2<float,3,3> const& nn, tensor2<float,3,3> const& stress, int N_active_ys);     // Return the plastic flow
+    virtual tensor2<float,3,3> alpha_bar(int num_active_ys, tensor2<float,3,3> const& stress);                                 // Return the rate of alpha(backstress)
 
-    int calc_I1J2J3(stresstensor const& mystress, double& I1, double& J2, double& J3) const;
-    int calc_pqtheta(stresstensor const& sigma, double& p, double& q, double& theta) const;
-    double calc_sin3theta(stresstensor const& stress, stresstensor const& alpha);
-    double Rtheta(stresstensor const& sigma, stresstensor const& alpha);
-    void dR_dsigma(stresstensor const& stress, stresstensor const& alpha, stresstensor& ret);
-    void dR_dalpha(stresstensor const& stress, stresstensor const& alpha , stresstensor& ret);
-    double dR_dtheta(stresstensor const& stress, stresstensor const& alpha);
-    void dtheta_dalpha_ij (stresstensor const& stress, stresstensor const& alpha, stresstensor& ret);
-    void dtheta_dsigma_ij(const stresstensor & sigma, stresstensor & ret);
+    int calc_I1J2J3(tensor2<float,3,3> const& mystress, double& I1, double& J2, double& J3) const;
+    int calc_pqtheta(tensor2<float,3,3> const& sigma, double& p, double& q, double& theta) const;
+    double calc_sin3theta(tensor2<float,3,3> const& stress, tensor2<float,3,3> const& alpha);
+    double Rtheta(tensor2<float,3,3> const& sigma, tensor2<float,3,3> const& alpha);
+    void dR_dsigma(tensor2<float,3,3> const& stress, tensor2<float,3,3> const& alpha, tensor2<float,3,3>& ret);
+    void dR_dalpha(tensor2<float,3,3> const& stress, tensor2<float,3,3> const& alpha , tensor2<float,3,3>& ret);
+    double dR_dtheta(tensor2<float,3,3> const& stress, tensor2<float,3,3> const& alpha);
+    void dtheta_dalpha_ij (tensor2<float,3,3> const& stress, tensor2<float,3,3> const& alpha, tensor2<float,3,3>& ret);
+    void dtheta_dsigma_ij(const tensor2<float,3,3> & sigma, tensor2<float,3,3> & ret);
 private:
   
     double pp0;                            // Initial Confinement

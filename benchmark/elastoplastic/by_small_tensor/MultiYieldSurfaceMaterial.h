@@ -102,12 +102,12 @@ public:
 * Following Methods are Implementated in this class.                                *
 ************************************************************************************/
     // Driver to run the constitutive integrater.
-    virtual int setTrialStrain(stresstensor const& other);      // Set the Total Strain, usually call by element
-    virtual int setTrialStrainIncr(stresstensor const& other);  // Set the Increment Strain, usually call by element
-    virtual int compute_stress(stresstensor const& strain_increment, int Nsubsteps = 1 );                               // Compute the Stress from the Increment Strain
+    virtual int setTrialStrain(tensor2<float,3,3> const& other);      // Set the Total Strain, usually call by element
+    virtual int setTrialStrainIncr(tensor2<float,3,3> const& other);  // Set the Increment Strain, usually call by element
+    virtual int compute_stress(tensor2<float,3,3> const& strain_increment, int Nsubsteps = 1 );                               // Compute the Stress from the Increment Strain
 
     // For finite-element call
-    // virtual stresstensor const& getTangent (void);              // Return the 6*6 Tangent matrix.
+    // virtual tensor2<float,3,3> const& getTangent (void);              // Return the 6*6 Tangent matrix.
 
     // State and Step Control
     // 1. Store and Roll-back Converge State for incremental strain approach.
@@ -132,22 +132,22 @@ public:
     virtual double getTNYS() const;                                     // Return the total number of Yield Surface
     virtual vector<double> const& getYieldSize() const;                    // Return the vector of Yield Surface Radius
     virtual vector<double> const& getHardPara() const;                  // Return the vector of Yield Surface Hardening Parameter
-    virtual stresstensor const& getStressTensor(void) const;                // Return the current commit stress
-    virtual stresstensor const& getStrainTensor(void) const;                // Return the current commit strain
-    virtual stresstensor const& getPlasticStrainTensor(void) const;         // Return the current plastic strain
+    virtual tensor2<float,3,3> const& getStressTensor(void) const;                // Return the current commit stress
+    virtual tensor2<float,3,3> const& getStrainTensor(void) const;                // Return the current commit strain
+    virtual tensor2<float,3,3> const& getPlasticStrainTensor(void) const;         // Return the current plastic strain
     static bool set_constitutive_integration_method(int method, double f_relative_tol, double stress_relative_tol, int n_max_iterations, double allowed_subincrement);
     virtual const char *getClassType( void ) const{return "MultiYieldSurfaceMaterial";};
 private:
     // Lower-Level helper Subroutine internal this class.
     // Action of the algorithms in the flow-control
-    virtual void update_stress(stresstensor& target_stress, double& lambda, int N_active_ys, stresstensor const& normal_refer_stress);                  // After the yield, Update the Stress 
-    virtual void update_plastic_strain(stresstensor& pstrain, double lambda, int num_active_ys, stresstensor const& stress );           // After the yield, Update the plastic strain
-    virtual void update_current_yield_surface(double& curr_yf_val, int num_active_ys, double lambda, stresstensor const& stress);   // After the yield, Update the current active yield surface (alpha)
-    virtual void update_inner_yield_surfaces(int num_active_ys, stresstensor const& stress);    // After the yield, Update the inner yield surface (alpha) 
-    virtual void update_failure_surface(stresstensor const& stress);
-    virtual void correct_update_stress(stresstensor& stress, double& lambda1, double& lambda2, int num_active_ys);          // After the overshooting, Correct the overshooting stress
-    virtual void correct_update_plastic_strain(stresstensor& pstrain, double lambda1, double lambda2, int num_active_ys, stresstensor const& stress );  // After the overshooting, Correct the plastic strain
-    virtual double zbrentstress(int num_active_ys,const stresstensor& start_stress,const stresstensor& end_stress,double x1, double x2, double tol) ;
+    virtual void update_stress(tensor2<float,3,3>& target_stress, double& lambda, int N_active_ys, tensor2<float,3,3> const& normal_refer_stress);                  // After the yield, Update the Stress 
+    virtual void update_plastic_strain(tensor2<float,3,3>& pstrain, double lambda, int num_active_ys, tensor2<float,3,3> const& stress );           // After the yield, Update the plastic strain
+    virtual void update_current_yield_surface(double& curr_yf_val, int num_active_ys, double lambda, tensor2<float,3,3> const& stress);   // After the yield, Update the current active yield surface (alpha)
+    virtual void update_inner_yield_surfaces(int num_active_ys, tensor2<float,3,3> const& stress);    // After the yield, Update the inner yield surface (alpha) 
+    virtual void update_failure_surface(tensor2<float,3,3> const& stress);
+    virtual void correct_update_stress(tensor2<float,3,3>& stress, double& lambda1, double& lambda2, int num_active_ys);          // After the overshooting, Correct the overshooting stress
+    virtual void correct_update_plastic_strain(tensor2<float,3,3>& pstrain, double lambda1, double lambda2, int num_active_ys, tensor2<float,3,3> const& stress );  // After the overshooting, Correct the plastic strain
+    virtual double zbrentstress(int num_active_ys,const tensor2<float,3,3>& start_stress,const tensor2<float,3,3>& end_stress,double x1, double x2, double tol) ;
 
 
 
@@ -157,20 +157,20 @@ private:
 ************************************************************************************/
 public:
     virtual MultiYieldSurfaceMaterial *getCopy( void );
-    virtual stifftensor const& getTangentTensor( void );       // Return the 3*3*3*3 Tangent tensor.
-    virtual void compute_elastoplastic_tangent(int N_active_ys, stresstensor const& intersection_stress , bool elastic=false);             // Compute the Tangent Stiffness
+    virtual tensor4<float,3,3,3,3> const& getTangentTensor( void );       // Return the 3*3*3*3 Tangent tensor.
+    virtual void compute_elastoplastic_tangent(int N_active_ys, tensor2<float,3,3> const& intersection_stress , bool elastic=false);             // Compute the Tangent Stiffness
     virtual void Print( ostream &s, int flag = 0 );
     virtual const char *getType( void ) const;
     virtual int getObjectSize(){return sizeof(*this);};
 
     
 private:
-    virtual void update_modulus( int num_active_ys, stresstensor const& s );               // Compute the Tangent Stiffness
-    virtual double yield_surface_val(stresstensor const& stress, stresstensor const& alpha, double radius);                    // Return the yield surface Value
-    virtual stresstensor df_dsigma(int num_active_ys, stresstensor const& stress);     // Return the normal to the yield surface w.r.t stress
-    virtual stresstensor df_dalpha(int num_active_ys, stresstensor const& stress);     // Return the normal to the yield surface w.r.t alpha(backstress)
-    virtual stresstensor plastic_flow_direct(stresstensor const& nn, stresstensor const& stress, int N_active_ys);     // Return the plastic flow
-    virtual stresstensor alpha_bar(int num_active_ys, stresstensor const& stress);     // Return the rate of alpha(backstress)
+    virtual void update_modulus( int num_active_ys, tensor2<float,3,3> const& s );               // Compute the Tangent Stiffness
+    virtual double yield_surface_val(tensor2<float,3,3> const& stress, tensor2<float,3,3> const& alpha, double radius);                    // Return the yield surface Value
+    virtual tensor2<float,3,3> df_dsigma(int num_active_ys, tensor2<float,3,3> const& stress);     // Return the normal to the yield surface w.r.t stress
+    virtual tensor2<float,3,3> df_dalpha(int num_active_ys, tensor2<float,3,3> const& stress);     // Return the normal to the yield surface w.r.t alpha(backstress)
+    virtual tensor2<float,3,3> plastic_flow_direct(tensor2<float,3,3> const& nn, tensor2<float,3,3> const& stress, int N_active_ys);     // Return the plastic flow
+    virtual tensor2<float,3,3> alpha_bar(int num_active_ys, tensor2<float,3,3> const& stress);     // Return the rate of alpha(backstress)
 
 
     //virtual MultiYieldSurfaceMaterial *getCopy(const char *code);
@@ -203,22 +203,22 @@ protected:
     static int n_max_iterations;
     static double allowed_subincrement;
 
-    stresstensor         iterate_stress;                    // Iterative Stress State
-    stresstensor         iterate_strain;                    // Iterative Strain State
-    stresstensor         iterate_plastic_strain;            // Iterative Plastic Strain State
-    vector<stresstensor> iterate_alpha_vec ;                // The vector of alpha(backstress)
+    tensor2<float,3,3>         iterate_stress;                    // Iterative Stress State
+    tensor2<float,3,3>         iterate_strain;                    // Iterative Strain State
+    tensor2<float,3,3>         iterate_plastic_strain;            // Iterative Plastic Strain State
+    vector<tensor2<float,3,3>> iterate_alpha_vec ;                // The vector of alpha(backstress)
     int              iterate_N_active;                  // Iterative Number of Active yield surface
 
-    stresstensor         converge_commit_stress;            // Commit/Stored Stress State
-    stresstensor         converge_commit_strain;            // Commit/Stored Strain State
-    stresstensor         converge_commit_plastic_strain;    // Commit/Stored Plastic Strain State
-    vector<stresstensor> converge_commit_alpha_vec ;        // The vector of alpha(backstress)
+    tensor2<float,3,3>         converge_commit_stress;            // Commit/Stored Stress State
+    tensor2<float,3,3>         converge_commit_strain;            // Commit/Stored Strain State
+    tensor2<float,3,3>         converge_commit_plastic_strain;    // Commit/Stored Plastic Strain State
+    vector<tensor2<float,3,3>> converge_commit_alpha_vec ;        // The vector of alpha(backstress)
     int              converge_commit_N_active;          // Commit/Stored Number of Active yield surface
 
-    stresstensor         save_iter_stress;                  // Commit/Stored Stress State
-    stresstensor         save_iter_strain;                  // Commit/Stored Strain State
-    stresstensor         save_iter_plastic_strain;          // Commit/Stored Plastic Strain State
-    vector<stresstensor> save_iter_alpha_vec ;              // The vector of alpha(backstress)
+    tensor2<float,3,3>         save_iter_stress;                  // Commit/Stored Stress State
+    tensor2<float,3,3>         save_iter_strain;                  // Commit/Stored Strain State
+    tensor2<float,3,3>         save_iter_plastic_strain;          // Commit/Stored Plastic Strain State
+    vector<tensor2<float,3,3>> save_iter_alpha_vec ;              // The vector of alpha(backstress)
     int              save_iter_N_active;                // Commit/Stored Number of Active yield surface
 
     double E;                              // Elastic Modulus
@@ -229,35 +229,33 @@ protected:
     vector<double> HardingPara;            // Hardening Parameter of each Yield Surface
     double initial_E;                      // Initial Young's Modulus
 
-    static const  stresstensor ZeroStrain;
-    static const  stresstensor ZeroStress;
-    static stifftensor Ee;                    // elastic constant: 3*3*3*3 tensor
-    static stifftensor Eep;                    // elastic constant: 3*3*3*3 tensor
-    // static stresstensor D;                     // elastic constant: 6*6 matrix
-    static const stresstensor kronecker_delta ;// Delta 
+    static const  tensor2<float,3,3> ZeroStrain;
+    static const  tensor2<float,3,3> ZeroStress;
+    static tensor4<float,3,3,3,3> Ee;                    // elastic constant: 3*3*3*3 tensor
+    static tensor4<float,3,3,3,3> Eep;                    // elastic constant: 3*3*3*3 tensor
+    // static tensor2<float,3,3> D;                     // elastic constant: 6*6 matrix
+    static const tensor2<float,3,3> kronecker_delta ;// Delta 
 
 
-    Index < 'i' > i;                       // Dummy or Free Index for LTensor
-    Index < 'j' > j;                       // Dummy or Free Index for LTensor
-    Index < 'k' > k;                       // Dummy or Free Index for LTensor
-    Index < 'l' > l;                       // Dummy or Free Index for LTensor
-    Index < 'o' > o;                       // Dummy or Free Index for LTensor
-    Index < 't' > t;                       // Dummy or Free Index for LTensor
-    Index < 'x' > x;                       // Dummy or Free Index for LTensor
-    Index < 'y' > y;                       // Dummy or Free Index for LTensor
+    eindex < 'i' > i;                       // Dummy or Free eindex for LTensor
+    eindex < 'j' > j;                       // Dummy or Free eindex for LTensor
+    eindex < 'k' > k;                       // Dummy or Free eindex for LTensor
+    eindex < 'l' > l;                       // Dummy or Free eindex for LTensor
+    eindex < 'o' > o;                       // Dummy or Free eindex for LTensor
+    eindex < 't' > t;                       // Dummy or Free eindex for LTensor
+    eindex < 'x' > x;                       // Dummy or Free eindex for LTensor
+    eindex < 'y' > y;                       // Dummy or Free eindex for LTensor
 
 
 
 
 
 // To be deleted.
-    static stresstensor errMatrix;
-    static VECT3 errVector;
-    static stresstensor errTensor;
-    static stifftensor errTensor4;
-    static stresstensor errTensor2;
-    static stresstensor errstresstensor;
-    static stresstensor errstraintensor;
+    static tensor2<float,3,3> errMatrix;
+    static tensor1<float,3> errVector;
+    static tensor2<float,3,3> errTensor;
+    static tensor4<float,3,3,3,3> errTensor4;
+    static tensor2<float,3,3> errTensor2;
     // static Vector errVectorVector;
     // static vector<double> errvec;
     double volume;

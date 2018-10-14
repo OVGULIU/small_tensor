@@ -76,7 +76,7 @@ int main(int argc, char const *argv[])
 
 	int Nsteps = max_strain_in/strain_incr ;
 	// Loading 
-	straintensor input_strain ;
+	tensor2<float,3,3> input_strain ;
 
 
 	auto start = std::chrono::system_clock::now();

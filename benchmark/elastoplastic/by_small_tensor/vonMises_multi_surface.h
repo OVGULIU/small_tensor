@@ -79,8 +79,8 @@ public:
 
 
     virtual vonMises_multi_surface *getCopy( void );
-    virtual stifftensor const& getTangentTensor( void );
-    virtual void compute_elastoplastic_tangent(int N_active_ys, stresstensor const& intersection_stress , bool elastic=false);
+    virtual tensor4<float,3,3,3,3> const& getTangentTensor( void );
+    virtual void compute_elastoplastic_tangent(int N_active_ys, tensor2<float,3,3> const& intersection_stress , bool elastic=false);
     virtual void Print( ostream &s, int flag = 0 );
     virtual const char *getType( void ) const;
     virtual const char *getClassType( void ) const{return "vonMises_multi_surface";};
@@ -88,12 +88,12 @@ public:
 
 
 private:
-    virtual void update_modulus( int N_active_ys, stresstensor const& s );               // Compute the Tangent Stiffness
-    virtual double yield_surface_val(stresstensor const& stress, stresstensor const& alpha, double radius);                    // Return the yield surface Value
-    virtual stresstensor df_dsigma(int N_active_ys, stresstensor const& stress);     // Return the normal to the yield surface w.r.t stress
-    virtual stresstensor df_dalpha(int N_active_ys, stresstensor const& stress);     // Return the normal to the yield surface w.r.t alpha(backstress)
-    virtual stresstensor plastic_flow_direct(stresstensor const& nn, stresstensor const& stress, int N_active_ys);     // Return the plastic flow
-    virtual stresstensor alpha_bar(int N_active_ys, stresstensor const& stress);     // Return the rate of alpha(backstress)
+    virtual void update_modulus( int N_active_ys, tensor2<float,3,3> const& s );               // Compute the Tangent Stiffness
+    virtual double yield_surface_val(tensor2<float,3,3> const& stress, tensor2<float,3,3> const& alpha, double radius);                    // Return the yield surface Value
+    virtual tensor2<float,3,3> df_dsigma(int N_active_ys, tensor2<float,3,3> const& stress);     // Return the normal to the yield surface w.r.t stress
+    virtual tensor2<float,3,3> df_dalpha(int N_active_ys, tensor2<float,3,3> const& stress);     // Return the normal to the yield surface w.r.t alpha(backstress)
+    virtual tensor2<float,3,3> plastic_flow_direct(tensor2<float,3,3> const& nn, tensor2<float,3,3> const& stress, int N_active_ys);     // Return the plastic flow
+    virtual tensor2<float,3,3> alpha_bar(int N_active_ys, tensor2<float,3,3> const& stress);     // Return the rate of alpha(backstress)
 
 
 };

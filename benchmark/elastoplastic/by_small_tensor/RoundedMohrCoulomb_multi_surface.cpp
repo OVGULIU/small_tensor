@@ -123,11 +123,11 @@ RoundedMohrCoulomb_multi_surface::~RoundedMohrCoulomb_multi_surface()
 // ================================================================================
 // Return the yield surface Value
 // ================================================================================
-double RoundedMohrCoulomb_multi_surface::yield_surface_val(stresstensor const& stress, stresstensor const& alpha, double yield_sz){
+double RoundedMohrCoulomb_multi_surface::yield_surface_val(tensor2<float,3,3> const& stress, tensor2<float,3,3> const& alpha, double yield_sz){
 
 
     double pp = -1./3. * (stress(0,0)+stress(1,1)+stress(2,2)) ;
-    stresstensor s;
+    tensor2<float,3,3> s;
     s(i,j) = stress(i,j) + pp * kronecker_delta(i,j) ;
 
     s(i,j) -= pp * alpha(i,j) ;
@@ -138,7 +138,7 @@ double RoundedMohrCoulomb_multi_surface::yield_surface_val(stresstensor const& s
 // ================================================================================
 // Return the normal to the yield surface w.r.t stress
 // ================================================================================
-stresstensor RoundedMohrCoulomb_multi_surface::df_dsigma(int N_active_ys, stresstensor const& stress){
+tensor2<float,3,3> RoundedMohrCoulomb_multi_surface::df_dsigma(int N_active_ys, tensor2<float,3,3> const& stress){
     if (N_active_ys > TNYS )
     {
         cerr<< "RoundedMohrCoulomb_multi_surface::df_dsigma " <<endl;
@@ -148,14 +148,14 @@ stresstensor RoundedMohrCoulomb_multi_surface::df_dsigma(int N_active_ys, stress
         cerr<< "Total NYS" << TNYS <<endl;
     }
 
-    stresstensor curr_alpha = iterate_alpha_vec[N_active_ys];
+    tensor2<float,3,3> curr_alpha = iterate_alpha_vec[N_active_ys];
     double curr_sz = yield_size[N_active_ys] ;
     double pp = -1./3. * (stress(0,0)+stress(1,1)+stress(2,2)) ;
-    stresstensor DevStress;
+    tensor2<float,3,3> DevStress;
     DevStress(i,j) = stress(i,j) + pp * kronecker_delta(i,j) ;
     DevStress(i,j) -= pp * curr_alpha(i,j) ;
 
-    static stresstensor result;
+    static tensor2<float,3,3> result;
     result *= 0. ;
 
     double den = sqrt(DevStress(i,j) * DevStress(i,j));
@@ -172,7 +172,7 @@ stresstensor RoundedMohrCoulomb_multi_surface::df_dsigma(int N_active_ys, stress
             / den;
     }
     result(i, j) += Rtheta(stress, curr_alpha) * sqrt(2./27.) * curr_sz * kronecker_delta(i, j);
-    static stresstensor dr_dsigma;
+    static tensor2<float,3,3> dr_dsigma;
     dR_dsigma(stress, curr_alpha, dr_dsigma);
     result(i, j) -= dr_dsigma(i,j) * sqrt(2./3.) * curr_sz * pp ;
 
@@ -182,7 +182,7 @@ stresstensor RoundedMohrCoulomb_multi_surface::df_dsigma(int N_active_ys, stress
 // ================================================================================
 // Return the normal to the yield surface w.r.t alpha(backstress)
 // ================================================================================
-stresstensor RoundedMohrCoulomb_multi_surface::df_dalpha(int N_active_ys, stresstensor const& stress){
+tensor2<float,3,3> RoundedMohrCoulomb_multi_surface::df_dalpha(int N_active_ys, tensor2<float,3,3> const& stress){
     if (N_active_ys > TNYS )
     {
         cerr<< "RoundedMohrCoulomb_multi_surface::df_dsigma " <<endl;
@@ -193,19 +193,19 @@ stresstensor RoundedMohrCoulomb_multi_surface::df_dalpha(int N_active_ys, stress
     }
 
     double curr_sz = yield_size[N_active_ys] ;
-    stresstensor curr_alpha = iterate_alpha_vec[N_active_ys];
+    tensor2<float,3,3> curr_alpha = iterate_alpha_vec[N_active_ys];
 
     double pp = -1./3. * (stress(0,0)+stress(1,1)+stress(2,2)) ;
-    stresstensor DevStress;
+    tensor2<float,3,3> DevStress;
     DevStress(i,j) = stress(i,j) + pp * kronecker_delta(i,j) ;
     DevStress(i,j) -= pp * curr_alpha(i,j) ;
 
-    static stresstensor result;
+    static tensor2<float,3,3> result;
     result *= 0. ;
 
     double den = sqrt(DevStress(i,j) * DevStress(i,j));
     result(i,j) = - pp * (DevStress(i,j)) / den ;
-    static stresstensor dr_dalpha;
+    static tensor2<float,3,3> dr_dalpha;
     dR_dalpha(stress, curr_alpha, dr_dalpha);
     result(i,j) -= curr_sz*pp*dr_dalpha(i,j);
 
@@ -216,8 +216,8 @@ stresstensor RoundedMohrCoulomb_multi_surface::df_dalpha(int N_active_ys, stress
 // ================================================================================
 // Return the plastic flow direction
 // ================================================================================
-stresstensor RoundedMohrCoulomb_multi_surface::plastic_flow_direct(stresstensor const& nn, stresstensor const& stress, int N_active_ys ){
-    static stresstensor mm;
+tensor2<float,3,3> RoundedMohrCoulomb_multi_surface::plastic_flow_direct(tensor2<float,3,3> const& nn, tensor2<float,3,3> const& stress, int N_active_ys ){
+    static tensor2<float,3,3> mm;
     // (1) The deviatoric plastic flow is associative. 
     mm = nn;
 
@@ -252,9 +252,9 @@ stresstensor RoundedMohrCoulomb_multi_surface::plastic_flow_direct(stresstensor 
 // ================================================================================
 // Return the rate of alpha(backstress)
 // ================================================================================
-stresstensor RoundedMohrCoulomb_multi_surface::alpha_bar(int N_active_ys, stresstensor const& stress){
+tensor2<float,3,3> RoundedMohrCoulomb_multi_surface::alpha_bar(int N_active_ys, tensor2<float,3,3> const& stress){
 
-    stresstensor curr_nn;
+    tensor2<float,3,3> curr_nn;
     double pp = -1./3. * (stress(0,0)+stress(1,1)+stress(2,2)) ;
     if (N_active_ys > (TNYS-1) )
     {
@@ -270,12 +270,12 @@ stresstensor RoundedMohrCoulomb_multi_surface::alpha_bar(int N_active_ys, stress
     }
     double curr_sz = yield_size[N_active_ys];
     double next_sz = yield_size[N_active_ys+1];
-    stresstensor curr_alpha = iterate_alpha_vec[N_active_ys];
-    stresstensor next_alpha = iterate_alpha_vec[N_active_ys+1];
-    stresstensor DevStress;
+    tensor2<float,3,3> curr_alpha = iterate_alpha_vec[N_active_ys];
+    tensor2<float,3,3> next_alpha = iterate_alpha_vec[N_active_ys+1];
+    tensor2<float,3,3> DevStress;
     DevStress(i,j) = stress(i,j) + pp * kronecker_delta(i,j) ;
 
-    stresstensor direct;
+    tensor2<float,3,3> direct;
     if(curr_sz == 0){
         cerr<< "RoundedMohrCoulomb_multi_surface::alpha_bar " <<endl;
         cerr<< "curr_sz == 0 " <<endl;
@@ -313,9 +313,9 @@ stresstensor RoundedMohrCoulomb_multi_surface::alpha_bar(int N_active_ys, stress
 }
 
 
-// void RoundedMohrCoulomb_multi_surface::dq_dsigma_ij(stresstensor const& sigma, stresstensor const& alpha, stresstensor & result) // Stress derivative of deviatoric stress q
+// void RoundedMohrCoulomb_multi_surface::dq_dsigma_ij(tensor2<float,3,3> const& sigma, tensor2<float,3,3> const& alpha, tensor2<float,3,3> & result) // Stress derivative of deviatoric stress q
 // {
-//     static stresstensor s(3, 3, 0.0);
+//     static tensor2<float,3,3> s(3, 3, 0.0);
 //     s *= 0;
 //     double p = -1./3. * (sigma(0,0)+sigma(1,1)+sigma(2,2)) ;
 //     s(i,j) = sigma(i,j) + p * kronecker_delta(i,j) ;
@@ -339,9 +339,9 @@ stresstensor RoundedMohrCoulomb_multi_surface::alpha_bar(int N_active_ys, stress
 //     return;
 // }
 
-// void RoundedMohrCoulomb_multi_surface::dq_dalpha_ij(stresstensor const& sigma, stresstensor const& alpha, stresstensor & result) // Stress derivative of deviatoric stress q
+// void RoundedMohrCoulomb_multi_surface::dq_dalpha_ij(tensor2<float,3,3> const& sigma, tensor2<float,3,3> const& alpha, tensor2<float,3,3> & result) // Stress derivative of deviatoric stress q
 // {
-//     static stresstensor s(3, 3, 0.0);
+//     static tensor2<float,3,3> s(3, 3, 0.0);
 //     s *= 0;
 //     double p = -1./3. * (sigma(0,0)+sigma(1,1)+sigma(2,2)) ;
 //     s(i,j) = sigma(i,j) + p * kronecker_delta(i,j) ;
@@ -364,7 +364,7 @@ stresstensor RoundedMohrCoulomb_multi_surface::alpha_bar(int N_active_ys, stress
 // }
 
 
-double RoundedMohrCoulomb_multi_surface::Rtheta(stresstensor const& stress, stresstensor const& alpha){
+double RoundedMohrCoulomb_multi_surface::Rtheta(tensor2<float,3,3> const& stress, tensor2<float,3,3> const& alpha){
 
     double rtheta{0.};
 
@@ -376,17 +376,17 @@ double RoundedMohrCoulomb_multi_surface::Rtheta(stresstensor const& stress, stre
 }
 
 
-void RoundedMohrCoulomb_multi_surface::dR_dsigma(stresstensor const& stress, stresstensor const& alpha, stresstensor& ret){
+void RoundedMohrCoulomb_multi_surface::dR_dsigma(tensor2<float,3,3> const& stress, tensor2<float,3,3> const& alpha, tensor2<float,3,3>& ret){
     double dr_dtheta = dR_dtheta(stress, alpha);
-    static stresstensor dtheta_dsigma;
-    static stresstensor sigmaBar; 
+    static tensor2<float,3,3> dtheta_dsigma;
+    static tensor2<float,3,3> sigmaBar; 
     double pp = -1./3. * (stress(0,0) + stress(1,1) + stress(2,2));
     sigmaBar(i,j) = 3 * (stress(i,j) - pp * alpha(i,j)); //According to Prevost 1985. Eq(19).
     dtheta_dsigma_ij(sigmaBar, dtheta_dsigma);
     ret(i,j) = dr_dtheta * dtheta_dsigma(i,j);
 }
 
-double RoundedMohrCoulomb_multi_surface::dR_dtheta(stresstensor const& stress, stresstensor const& alpha){
+double RoundedMohrCoulomb_multi_surface::dR_dtheta(tensor2<float,3,3> const& stress, tensor2<float,3,3> const& alpha){
     double sin3theta = calc_sin3theta(stress, alpha);
     double cos3theta = sqrt(1 - pow(sin3theta,2));
     double ret{0.};
@@ -399,15 +399,15 @@ double RoundedMohrCoulomb_multi_surface::dR_dtheta(stresstensor const& stress, s
     return ret;
 }
 
-void RoundedMohrCoulomb_multi_surface::dR_dalpha(stresstensor const& stress, stresstensor const& alpha , stresstensor& ret){
+void RoundedMohrCoulomb_multi_surface::dR_dalpha(tensor2<float,3,3> const& stress, tensor2<float,3,3> const& alpha , tensor2<float,3,3>& ret){
     double dr_dtheta = dR_dtheta(stress, alpha);
-    static stresstensor dtheta_dalpha;
+    static tensor2<float,3,3> dtheta_dalpha;
     dtheta_dalpha_ij(stress, alpha, dtheta_dalpha);
     ret(i,j) = dr_dtheta * dtheta_dalpha(i,j);
 }
 
 
-void RoundedMohrCoulomb_multi_surface::dtheta_dsigma_ij(const stresstensor & sigma, stresstensor & ret) // Stress derivative of Lode angle
+void RoundedMohrCoulomb_multi_surface::dtheta_dsigma_ij(const tensor2<float,3,3> & sigma, tensor2<float,3,3> & ret) // Stress derivative of Lode angle
 {
     double I1, J2D, J3D, q, theta;
     double trace;
@@ -415,12 +415,12 @@ void RoundedMohrCoulomb_multi_surface::dtheta_dsigma_ij(const stresstensor & sig
     // ===============================================================
     //Following implementation in stresst.cpp
     // ===============================================================
-    static stresstensor s(3, 3, 0);
-    static stresstensor t(3, 3, 0);
+    static tensor2<float,3,3> s(3, 3, 0);
+    static tensor2<float,3,3> t(3, 3, 0);
     s *= 0;
     t *= 0;
 
-    const stresstensor& I2 = kronecker_delta;
+    const tensor2<float,3,3>& I2 = kronecker_delta;
     calc_I1J2J3(sigma, I1, J2D, J3D) ;
     calc_pqtheta(sigma, trace, q, theta);
     theta = theta * M_PI / 180; /// getpqtheta returns in degrees
@@ -440,9 +440,9 @@ void RoundedMohrCoulomb_multi_surface::dtheta_dsigma_ij(const stresstensor & sig
 }
 
 
-void RoundedMohrCoulomb_multi_surface::dtheta_dalpha_ij (stresstensor const& stress, stresstensor const& alpha, stresstensor& ret){
+void RoundedMohrCoulomb_multi_surface::dtheta_dalpha_ij (tensor2<float,3,3> const& stress, tensor2<float,3,3> const& alpha, tensor2<float,3,3>& ret){
     double J2bar{0.}, J3bar{0.}, I1{0.} ;
-    static stresstensor ss; 
+    static tensor2<float,3,3> ss; 
     double pp = -1./3. * (stress(0,0) + stress(1,1) + stress(2,2));
     ss(i,j) = stress(i,j) + pp * kronecker_delta(i,j);
     ss(i,j) = 3. * (ss(i,j) - pp * alpha(i,j) );
@@ -468,7 +468,7 @@ void RoundedMohrCoulomb_multi_surface::dtheta_dalpha_ij (stresstensor const& str
 // //================================================================================
 // // Return the 6*6 Tangent matrix.
 // //================================================================================
-// stresstensor const& RoundedMohrCoulomb_multi_surface::getTangent(void){
+// tensor2<float,3,3> const& RoundedMohrCoulomb_multi_surface::getTangent(void){
 //     // =========================================================
 //     // (1) Update the modulus based on active yield surface.
 //     // =========================================================
@@ -507,7 +507,7 @@ void RoundedMohrCoulomb_multi_surface::dtheta_dalpha_ij (stresstensor const& str
 //================================================================================
 // Return the 3*3*3*3 Tangent tensor.
 //================================================================================
-stifftensor const& RoundedMohrCoulomb_multi_surface::getTangentTensor( void )
+tensor4<float,3,3,3,3> const& RoundedMohrCoulomb_multi_surface::getTangentTensor( void )
 {
     // compute_tangent_tensor();
     return Ee;
@@ -516,7 +516,7 @@ stifftensor const& RoundedMohrCoulomb_multi_surface::getTangentTensor( void )
 //================================================================================
 // Compute the Elastic Tangent Stiffness
 //================================================================================
-void RoundedMohrCoulomb_multi_surface::update_modulus(int N_active_ys, stresstensor const& stress)
+void RoundedMohrCoulomb_multi_surface::update_modulus(int N_active_ys, tensor2<float,3,3> const& stress)
 {
     Ee *= 0;
     // =========================================================
@@ -544,11 +544,11 @@ void RoundedMohrCoulomb_multi_surface::update_modulus(int N_active_ys, stressten
     // }
 }
 
-void RoundedMohrCoulomb_multi_surface::compute_elastoplastic_tangent( int N_active_ys, stresstensor const& intersection_stress , bool elastic){
-    stresstensor curr_xi = df_dalpha(N_active_ys, intersection_stress);
-    stresstensor bar_alpha = alpha_bar(N_active_ys, intersection_stress);
-    stresstensor curr_nn = df_dsigma(N_active_ys,  intersection_stress);
-    stresstensor curr_mm = plastic_flow_direct( curr_nn,  intersection_stress , N_active_ys);
+void RoundedMohrCoulomb_multi_surface::compute_elastoplastic_tangent( int N_active_ys, tensor2<float,3,3> const& intersection_stress , bool elastic){
+    tensor2<float,3,3> curr_xi = df_dalpha(N_active_ys, intersection_stress);
+    tensor2<float,3,3> bar_alpha = alpha_bar(N_active_ys, intersection_stress);
+    tensor2<float,3,3> curr_nn = df_dsigma(N_active_ys,  intersection_stress);
+    tensor2<float,3,3> curr_mm = plastic_flow_direct( curr_nn,  intersection_stress , N_active_ys);
     update_modulus(N_active_ys, intersection_stress);
     double denominator = curr_nn(i,j) * Ee(i,j,k,l) * curr_mm(k,l) - curr_xi(o,t) * bar_alpha(o,t);
     // if (denominator == 0 ){
@@ -570,10 +570,10 @@ void RoundedMohrCoulomb_multi_surface::compute_elastoplastic_tangent( int N_acti
     // double curr_sz = yield_size[N_active_ys];
     // double GG = HardingPara[0];
     // denominator = (12. * GG + 6 * HardingPara[N_active_ys]  ) * pow(1.5 * curr_sz, 2.);
-    // stresstensor curr_alpha = iterate_alpha_vec[N_active_ys];
-    // stresstensor HH;
+    // tensor2<float,3,3> curr_alpha = iterate_alpha_vec[N_active_ys];
+    // tensor2<float,3,3> HH;
     // double pp = - 1. /3. * (intersection_stress(0,0) + intersection_stress(1,1) + intersection_stress(2,2));
-    // stresstensor DevStress;
+    // tensor2<float,3,3> DevStress;
     // DevStress(i,j) = intersection_stress(i,j) + pp * kronecker_delta(i,j);
     // HH(i,j) = 6. * GG * (DevStress(i,j) - curr_alpha(i,j)) ; 
     // Eep(i,j,k,l) = Ee(i,j,k,l) - HH(i,j) * HH(k,l) / denominator ; 
@@ -732,13 +732,13 @@ void RoundedMohrCoulomb_multi_surface::Print( ostream &s, int flag )
 }
 
 
-int RoundedMohrCoulomb_multi_surface::calc_I1J2J3(stresstensor const& mystress, double& I1, double& J2, double& J3) const
+int RoundedMohrCoulomb_multi_surface::calc_I1J2J3(tensor2<float,3,3> const& mystress, double& I1, double& J2, double& J3) const
 {
     // ------------------------------------------------------------
     // preliminary
     I1 = mystress(0, 0) + mystress(1, 1) + mystress(2, 2);
     const double sigma_m = I1 / 3.0;
-    stresstensor s = mystress;
+    tensor2<float,3,3> s = mystress;
     s(0, 0) -= sigma_m;
     s(1, 1) -= sigma_m;
     s(2, 2) -= sigma_m;
@@ -763,7 +763,7 @@ int RoundedMohrCoulomb_multi_surface::calc_I1J2J3(stresstensor const& mystress, 
 // q = sqrt(3* J2)
 // cos(3*theta) = 3/2 * sqrt(3) * J3 / J2^(3/2)
 // ------------------------------------------------------------
-int RoundedMohrCoulomb_multi_surface::calc_pqtheta(stresstensor const& sigma, double& p, double& q, double& theta) const
+int RoundedMohrCoulomb_multi_surface::calc_pqtheta(tensor2<float,3,3> const& sigma, double& p, double& q, double& theta) const
 {
     double I1, J2, J3;
     calc_I1J2J3(sigma, I1, J2, J3);
@@ -793,9 +793,9 @@ int RoundedMohrCoulomb_multi_surface::calc_pqtheta(stresstensor const& sigma, do
     return -1;
 }
 
-double RoundedMohrCoulomb_multi_surface::calc_sin3theta(stresstensor const& stress, stresstensor const& alpha){
+double RoundedMohrCoulomb_multi_surface::calc_sin3theta(tensor2<float,3,3> const& stress, tensor2<float,3,3> const& alpha){
     double sin3theta{0.}, J2bar{0.}, J3bar{0.}, I1{0.} ;
-    static stresstensor ss; 
+    static tensor2<float,3,3> ss; 
     double pp = -1./3. * (stress(0,0) + stress(1,1) + stress(2,2));
     ss(i,j) = stress(i,j) + pp * kronecker_delta(i,j);
     ss(i,j) = 3. * (ss(i,j) - pp * alpha(i,j) );

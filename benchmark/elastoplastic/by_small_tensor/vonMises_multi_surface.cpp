@@ -89,7 +89,7 @@ vonMises_multi_surface::~vonMises_multi_surface()
 // ================================================================================
 // Return the normal to the yield surface w.r.t stress
 // ================================================================================
-stresstensor vonMises_multi_surface::df_dsigma(int N_active_ys, stresstensor const& stress){
+tensor2<float,3,3> vonMises_multi_surface::df_dsigma(int N_active_ys, tensor2<float,3,3> const& stress){
     if (N_active_ys > TNYS )
     {
         cerr<< "vonMises_multi_surface::df_dsigma " <<endl;
@@ -98,12 +98,12 @@ stresstensor vonMises_multi_surface::df_dsigma(int N_active_ys, stresstensor con
         cerr<< "alpha_vec.size() " << iterate_alpha_vec.size() <<endl;
         cerr<< "Total NYS " << TNYS <<endl;
     }
-    stresstensor curr_alpha = iterate_alpha_vec[N_active_ys];
+    tensor2<float,3,3> curr_alpha = iterate_alpha_vec[N_active_ys];
     double pp = -1./3. * (stress(0,0)+stress(1,1)+stress(2,2)) ;
-    stresstensor DevStress;
+    tensor2<float,3,3> DevStress;
     DevStress(i,j) = stress(i,j) + pp * kronecker_delta(i,j) ;
 
-    stresstensor s_minus_alpha;
+    tensor2<float,3,3> s_minus_alpha;
     s_minus_alpha(i,j) = DevStress(i,j) - curr_alpha(i,j) ; 
     double denominato = sqrt(  s_minus_alpha(i,j)*s_minus_alpha(i,j)   )  ; 
 
@@ -115,7 +115,7 @@ stresstensor vonMises_multi_surface::df_dsigma(int N_active_ys, stresstensor con
 // ================================================================================
 // Return the normal to the yield surface w.r.t alpha(backstress)
 // ================================================================================
-stresstensor vonMises_multi_surface::df_dalpha(int N_active_ys, stresstensor const& stress){
+tensor2<float,3,3> vonMises_multi_surface::df_dalpha(int N_active_ys, tensor2<float,3,3> const& stress){
     if (N_active_ys > TNYS )
     {
         cerr<< "vonMises_multi_surface::df_dalpha " <<endl;
@@ -124,12 +124,12 @@ stresstensor vonMises_multi_surface::df_dalpha(int N_active_ys, stresstensor con
         cerr<< "iterate_alpha_vec.size() " << iterate_alpha_vec.size() <<endl;
         cerr<< "Total NYS" << TNYS <<endl;
     }
-    stresstensor curr_alpha = iterate_alpha_vec[N_active_ys];
+    tensor2<float,3,3> curr_alpha = iterate_alpha_vec[N_active_ys];
     double pp = -1./3. * (stress(0,0)+stress(1,1)+stress(2,2)) ;
-    stresstensor DevStress;
+    tensor2<float,3,3> DevStress;
     DevStress(i,j) = stress(i,j) + pp * kronecker_delta(i,j) ;
 
-    stresstensor s_minus_alpha;
+    tensor2<float,3,3> s_minus_alpha;
     s_minus_alpha(i,j) = DevStress(i,j) - curr_alpha(i,j) ; 
     double denominato = sqrt(  s_minus_alpha(i,j)*s_minus_alpha(i,j)   )  ; 
     // change s_minus_alpha to result df_dalpha. 
@@ -141,8 +141,8 @@ stresstensor vonMises_multi_surface::df_dalpha(int N_active_ys, stresstensor con
 // ================================================================================
 // Return the plastic flow direction
 // ================================================================================
-stresstensor vonMises_multi_surface::plastic_flow_direct(stresstensor const& nn, stresstensor const& stress, int N_active_ys ){
-    static stresstensor mm;
+tensor2<float,3,3> vonMises_multi_surface::plastic_flow_direct(tensor2<float,3,3> const& nn, tensor2<float,3,3> const& stress, int N_active_ys ){
+    static tensor2<float,3,3> mm;
     mm *= 0. ;
     // (1) The plastic flow is associative. 
     mm = nn;
@@ -154,8 +154,8 @@ stresstensor vonMises_multi_surface::plastic_flow_direct(stresstensor const& nn,
 // ================================================================================
 // Return the rate of alpha(backstress)
 // ================================================================================
-stresstensor vonMises_multi_surface::alpha_bar(int N_active_ys, stresstensor const& stress){
-    stresstensor curr_nn;
+tensor2<float,3,3> vonMises_multi_surface::alpha_bar(int N_active_ys, tensor2<float,3,3> const& stress){
+    tensor2<float,3,3> curr_nn;
     if (N_active_ys > (TNYS-1) )
     {
         curr_nn = df_dsigma(N_active_ys, stress);
@@ -166,12 +166,12 @@ stresstensor vonMises_multi_surface::alpha_bar(int N_active_ys, stresstensor con
     }
     double curr_radius = yield_size[N_active_ys];
     double next_radius = yield_size[N_active_ys+1];
-    stresstensor curr_alpha = iterate_alpha_vec[N_active_ys];
-    stresstensor next_alpha = iterate_alpha_vec[N_active_ys+1];
+    tensor2<float,3,3> curr_alpha = iterate_alpha_vec[N_active_ys];
+    tensor2<float,3,3> next_alpha = iterate_alpha_vec[N_active_ys+1];
     double pp = -1./3. * (stress(0,0)+stress(1,1)+stress(2,2)) ;
-    stresstensor DevStress;
+    tensor2<float,3,3> DevStress;
     DevStress(i,j) = stress(i,j) + pp * kronecker_delta(i,j) ;
-    stresstensor direct;
+    tensor2<float,3,3> direct;
     if(curr_radius == 0){
         cerr<< "vonMises_multi_surface::alpha_bar " <<endl;
         cerr<< "curr_radius == 0 " <<endl;
@@ -213,15 +213,15 @@ stresstensor vonMises_multi_surface::alpha_bar(int N_active_ys, stresstensor con
 // ================================================================================
 // Return the yield surface Value
 // ================================================================================
-double vonMises_multi_surface::yield_surface_val(stresstensor const& stress, stresstensor const& alpha, double radius){
+double vonMises_multi_surface::yield_surface_val(tensor2<float,3,3> const& stress, tensor2<float,3,3> const& alpha, double radius){
 
     double ret{0.} ; 
 
     double pp = -1./3. * (stress(0,0)+stress(1,1)+stress(2,2)) ;
-    stresstensor s ;
+    tensor2<float,3,3> s ;
     s(i,j) = stress(i,j) + pp * kronecker_delta(i,j) ;
 
-    stresstensor s_minus_alpha;
+    tensor2<float,3,3> s_minus_alpha;
     s_minus_alpha(i,j) = s(i,j) - alpha(i,j) ; 
     double stress_state = sqrt(  s_minus_alpha(i,j)*s_minus_alpha(i,j)   )  ; 
     ret = stress_state - sqrt(2./3.) * radius ; 
@@ -233,7 +233,7 @@ double vonMises_multi_surface::yield_surface_val(stresstensor const& stress, str
 // //================================================================================
 // // Return the 6*6 Tangent matrix.
 // //================================================================================
-// stresstensor const& vonMises_multi_surface::getTangent(void){
+// tensor2<float,3,3> const& vonMises_multi_surface::getTangent(void){
 //     // double mu2 = E / (1.0 + v);
 //     // double lam = v * mu2 / (1.0 - 2.0 * v);
 //     // double mu  = 0.50 * mu2;
@@ -254,7 +254,7 @@ double vonMises_multi_surface::yield_surface_val(stresstensor const& stress, str
 //================================================================================
 // Compute the Elastic Tangent Stiffness
 //================================================================================
-void vonMises_multi_surface::update_modulus( int N_active_ys, stresstensor const& s )
+void vonMises_multi_surface::update_modulus( int N_active_ys, tensor2<float,3,3> const& s )
 {
     Ee *= 0;
     // =========================================================
@@ -280,7 +280,7 @@ void vonMises_multi_surface::update_modulus( int N_active_ys, stresstensor const
     // }
 }
 
-stifftensor const& vonMises_multi_surface::getTangentTensor()
+tensor4<float,3,3,3,3> const& vonMises_multi_surface::getTangentTensor()
 {
     if (iterate_N_active != 0)
     {
@@ -289,10 +289,10 @@ stifftensor const& vonMises_multi_surface::getTangentTensor()
     return Eep;
 }
 
-void vonMises_multi_surface::compute_elastoplastic_tangent(int N_active_ys, stresstensor const& intersection_stress, bool elastic){
-    stresstensor curr_xi = df_dalpha(N_active_ys, intersection_stress);
-    stresstensor bar_alpha = alpha_bar(N_active_ys, intersection_stress);
-    stresstensor curr_nn = df_dsigma(N_active_ys,  intersection_stress);
+void vonMises_multi_surface::compute_elastoplastic_tangent(int N_active_ys, tensor2<float,3,3> const& intersection_stress, bool elastic){
+    tensor2<float,3,3> curr_xi = df_dalpha(N_active_ys, intersection_stress);
+    tensor2<float,3,3> bar_alpha = alpha_bar(N_active_ys, intersection_stress);
+    tensor2<float,3,3> curr_nn = df_dsigma(N_active_ys,  intersection_stress);
     update_modulus(N_active_ys, intersection_stress);
     double denominator = curr_nn(i,j) * Ee(i,j,k,l) * curr_nn(k,l) - curr_xi(o,t) * bar_alpha(o,t);
     // if (denominator == 0 ){
@@ -314,10 +314,10 @@ void vonMises_multi_surface::compute_elastoplastic_tangent(int N_active_ys, stre
     // double curr_sz = yield_size[N_active_ys];
     // double GG = HardingPara[0];
     // denominator = (12. * GG + 6 * HardingPara[N_active_ys]  ) * pow(1.5 * curr_sz, 2.);
-    // stresstensor curr_alpha = iterate_alpha_vec[N_active_ys];
-    // stresstensor HH;
+    // tensor2<float,3,3> curr_alpha = iterate_alpha_vec[N_active_ys];
+    // tensor2<float,3,3> HH;
     // double pp = - 1. /3. * (intersection_stress(0,0) + intersection_stress(1,1) + intersection_stress(2,2));
-    // stresstensor DevStress;
+    // tensor2<float,3,3> DevStress;
     // DevStress(i,j) = intersection_stress(i,j) + pp * kronecker_delta(i,j);
     // HH(i,j) = 6. * GG * (DevStress(i,j) - curr_alpha(i,j)) ; 
     // Eep(i,j,k,l) = Ee(i,j,k,l) - HH(i,j) * HH(k,l) / denominator ; 

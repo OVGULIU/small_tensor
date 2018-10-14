@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SMALLTENSOR_BENCHMARK_ELASTOPL_DRUCKERPRAGER_MULTI_YIELD_SURFACE_H
+#define SMALLTENSOR_BENCHMARK_ELASTOPL_DRUCKERPRAGER_MULTI_YIELD_SURFACE_H
 ///////////////////////////////////////////////////////////////////////////////
 //   COPYLEFT (C): Woody's viral GPL-like license (by BJ):
 //                 ``This    source  code is Copyrighted in
@@ -90,8 +91,8 @@ public:
     
     // Getter
     virtual DruckerPrager_multi_yield_surface *getCopy( void );
-    virtual stifftensor const& getTangentTensor( void );
-    virtual void compute_elastoplastic_tangent( int N_active_ys, stresstensor const& intersection_stress , bool elastic=false ); 
+    virtual tensor4<float,3,3,3,3> const& getTangentTensor( void );
+    virtual void compute_elastoplastic_tangent( int N_active_ys, tensor2<float,3,3> const& intersection_stress , bool elastic=false ); 
     virtual void Print( ostream &s, int flag = 0 );
     virtual const char *getType( void ) const{return "DruckerPrager_multi_yield_surface";};
     virtual const char *getClassType( void ) const{return "DruckerPrager_multi_yield_surface";};
@@ -105,12 +106,12 @@ public:
     double getscal() const;                // Return the material constant scal
     
 private:
-    virtual void update_modulus( int num_active_ys, stresstensor const& s );                                   // Compute the Tangent Stiffness
-    virtual double yield_surface_val(stresstensor const& stress, stresstensor const& alpha, double eta);           // Return the yield surface Value
-    virtual stresstensor df_dsigma(int num_active_ys, stresstensor const& stress);                                 // Return the normal to the yield surface w.r.t stress
-    virtual stresstensor df_dalpha(int num_active_ys, stresstensor const& stress);                                 // Return the normal to the yield surface w.r.t alpha(backstress)
-    virtual stresstensor plastic_flow_direct(stresstensor const& nn, stresstensor const& stress, int N_active_ys);     // Return the plastic flow
-    virtual stresstensor alpha_bar(int num_active_ys, stresstensor const& stress);                                 // Return the rate of alpha(backstress)
+    virtual void update_modulus( int num_active_ys, tensor2<float,3,3> const& s );                                   // Compute the Tangent Stiffness
+    virtual double yield_surface_val(tensor2<float,3,3> const& stress, tensor2<float,3,3> const& alpha, double eta);           // Return the yield surface Value
+    virtual tensor2<float,3,3> df_dsigma(int num_active_ys, tensor2<float,3,3> const& stress);                                 // Return the normal to the yield surface w.r.t stress
+    virtual tensor2<float,3,3> df_dalpha(int num_active_ys, tensor2<float,3,3> const& stress);                                 // Return the normal to the yield surface w.r.t alpha(backstress)
+    virtual tensor2<float,3,3> plastic_flow_direct(tensor2<float,3,3> const& nn, tensor2<float,3,3> const& stress, int N_active_ys);     // Return the plastic flow
+    virtual tensor2<float,3,3> alpha_bar(int num_active_ys, tensor2<float,3,3> const& stress);                                 // Return the rate of alpha(backstress)
 
 
     double pp0;                            // Initial Confinement
@@ -124,3 +125,4 @@ private:
 };
 
 
+#endif // SMALLTENSOR_BENCHMARK_ELASTOPL_DRUCKERPRAGER_MULTI_YIELD_SURFACE_H

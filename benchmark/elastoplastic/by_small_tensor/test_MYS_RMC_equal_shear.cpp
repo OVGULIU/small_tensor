@@ -11,7 +11,7 @@ using namespace std; using namespace smalltensor;
 // dsigma(0,1) = E(0,1,0,1)*depsilon(0,1) 
 //             + E(0,1,1,0)*depsilon(1,0)
 // because other components in dsigma are zeroes. 
-double stress2strain(double stress, stifftensor const& E){
+double stress2strain(double stress, tensor4<float,3,3,3,3> const& E){
     double strain01{stress};
     strain01 /= (E(0,1,0,1) + E(0,1,1,0));
     return strain01;
@@ -83,7 +83,7 @@ int main(int argc, char const *argv[])
 		eta,
 		HardingPara 
 	);
-	stresstensor input_strain ;
+	tensor2<float,3,3> input_strain ;
 
 	auto tStress = theMaterial->getStressTensor();
 	auto tStrain = theMaterial->getStrainTensor();
