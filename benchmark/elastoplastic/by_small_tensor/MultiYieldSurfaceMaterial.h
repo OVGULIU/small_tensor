@@ -52,7 +52,7 @@
 *****************************************************************************************************************/
 
 
-#include "../../../smalltensorIntrinsics/app/smalltensor.h"
+#include "../../../smalltensor/smalltensor.h"
 #include <limits>
 #include <vector>
 #include <cmath>
