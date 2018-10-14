@@ -58,7 +58,7 @@
 
 #include <iostream>
 #include "./ltensor/LTensor.h"
-using namespace std;
+using namespace std; using namespace smalltensor;
 
 class RoundedMohrCoulomb_multi_surface : public MultiYieldSurfaceMaterial
 {

@@ -7,7 +7,7 @@
 #include <chrono>
 #include <ctime>
 
-using namespace std;
+using namespace std; using namespace smalltensor;
 
 void write_to_file(int m, int n, int k , double duration, std::string const& prefix=""){
   std::cerr << " m n k = " << m << ", " << n << ", " << k << "\n" ; 

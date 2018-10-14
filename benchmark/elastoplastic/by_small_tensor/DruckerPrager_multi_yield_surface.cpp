@@ -37,7 +37,7 @@
 // #include <ID.h>
 // #include <Vector.h>
 #include "DruckerPrager_multi_yield_surface.h"
-using namespace std;
+using namespace std; using namespace smalltensor;
 
 //================================================================================
 // Constructor

@@ -59,7 +59,7 @@
 
 #include <iostream>
 #include "./ltensor/LTensor.h"
-using namespace std;
+using namespace std; using namespace smalltensor;
 
 class DruckerPrager_multi_yield_surface : public MultiYieldSurfaceMaterial
 {

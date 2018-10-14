@@ -60,7 +60,7 @@
 // #include <Channel.h>
 
 // #include "./ltensor/LTensor.h"
-using namespace std;
+using namespace std; using namespace smalltensor;
 
 class vonMises_multi_surface : public MultiYieldSurfaceMaterial
 {

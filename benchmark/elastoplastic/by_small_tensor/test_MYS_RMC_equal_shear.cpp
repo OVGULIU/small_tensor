@@ -3,7 +3,7 @@
 #include "vonMises_multi_surface.h"
 #include <fstream>
 #include <string>
-using namespace std;
+using namespace std; using namespace smalltensor;
 
 
 // /////////////////////////////////////////////////////////////////////////////

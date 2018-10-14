@@ -38,7 +38,7 @@
 // #include <Vector.h>
 #include <vector>
 
-using namespace std;
+using namespace std; using namespace smalltensor;
 
 #define BRENT_MAXITER 20
 #define BRENT_TOLERANCE 1e-6

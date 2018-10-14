@@ -70,7 +70,7 @@
 constexpr double machine_epsilon = std::numeric_limits<double>::epsilon();
 
 
-using namespace std;
+using namespace std; using namespace smalltensor;
 enum struct MultiYieldSurfaceMaterial_Constitutive_Integration_Method : int
 {
     Not_Set,

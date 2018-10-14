@@ -4,7 +4,7 @@
 #include "DruckerPrager_multi_yield_surface.h"
 #include <fstream>
 #include <string>
-using namespace std;
+using namespace std; using namespace smalltensor;
 
 
 
