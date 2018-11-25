@@ -4,7 +4,8 @@
 using namespace smalltensor ; 
 
 const tensor2<float,3,3> ConcreteDamageModel::kronecker_delta("identity");
-
+tensor4<float,3,3,3,3> ConcreteDamageModel::_Ee ; 
+tensor4<float,3,3,3,3> ConcreteDamageModel::_D_inv ; 
 
 ConcreteDamageModel::ConcreteDamageModel(
 		float E_in,
@@ -56,14 +57,15 @@ ConcreteDamageModel::ConcreteDamageModel(
 
 int 
 ConcreteDamageModel::setTrialStrainIncr(tensor2<float,3,3> const& strain_incr){
-	_trial_strain(I,J) = _trial_strain(I,J) + strain_incr(I,J) ; 
+	_trial_strain(I,J) = _commit_strain(I,J) + strain_incr(I,J) ; 
 
-	// Algorithm Box-1 Computer Effective Stress
+	// Algorithm Box-1 Compute Effective Stress
 	computeEffectiveStress(strain_incr);
 
-	// Algorithm Box-2 Computer Cauchy Stress
+	// Algorithm Box-2 Compute Cauchy Stress
 	computeCauchyStress();
 
+	return 1 ; 
 }
 
 
@@ -71,28 +73,35 @@ ConcreteDamageModel::setTrialStrainIncr(tensor2<float,3,3> const& strain_incr){
 int 
 ConcreteDamageModel::computeEffectiveStress(tensor2<float,3,3> const& strain_incr){
 	// Step (i): compute the trial stress.
+	cerr << " computeEffectiveStress>>> 1 " << endl ;
 	_effective_stress_trial(I,J) = _effective_stress_commit(I,J)
 	 		+ _Ee(I,J,K,L) * strain_incr(K,L) ; 
 
 	// Step (ii): is beta zero?
+	cerr << " computeEffectiveStress>>> 2 " << endl ;
 	if ( std::fabs(_beta_plastic_intensity) < 1e-10 ){
 		// Step (ii):  No plasticity.
 		_effective_stress_next = _effective_stress_trial ;
-		return 1 ; 
+		cerr << " return2,Done!" << endl ; 
+		return 1; 
 	}
 
 	// Step (iii): split stress to tensile and compressive
-	SplitStress(_effective_stress_trial, _effective_stress_tensile, _effective_stress_compress)
+	cerr << " computeEffectiveStress>>> 3 " << endl ;
+	SplitStress(_effective_stress_trial, _effective_stress_tensile, _effective_stress_compress) ; 
 
 	const float compress_equiv_stress = GetEquivStressCompress(_effective_stress_compress, _K_compress) ; 
 
+	cerr << " compress_equiv_stress = " << compress_equiv_stress << ", _r_compress=" << _r_compress << endl ; 
 	if ( compress_equiv_stress < _r_compress ){
 		// Step (iii):  No evolution for _d_compress and plastic_strain.
 		_effective_stress_next = _effective_stress_trial ;
+		cerr << " return3,Done!" << endl ; 
 		return 1; 
 	}
 	
 	// Step (iv): plastic evolution? 
+	cerr << " computeEffectiveStress>>> 4 " << endl ;
 	const float trial_stress_norm = std::sqrt( _effective_stress_trial(I,J) * _effective_stress_trial(I,J) ); 
 
 	tensor2<float,3,3> unit_trial_stress ; 
@@ -102,6 +111,7 @@ ConcreteDamageModel::computeEffectiveStress(tensor2<float,3,3> const& strain_inc
     if ( stress_strain_contract <= 0 ){
     	// Step (iv): No plastic evolution.
     	_effective_stress_next = _effective_stress_trial ;
+    	cerr << " return4,Done!" << endl ; 
     	return 1; 
     }
     const float lambda = 1 - _beta_plastic_intensity / trial_stress_norm * _E 
@@ -111,20 +121,25 @@ ConcreteDamageModel::computeEffectiveStress(tensor2<float,3,3> const& strain_inc
     tensor2<float,3,3> effective_stress_hat_compress ;
     effective_stress_hat(I,J) = lambda * _effective_stress_trial(I,J) ; 
     SplitStress(effective_stress_hat, effective_stress_hat_tensile, effective_stress_hat_compress) ; 
-    const float compress_equiv_stress_hat = GetEquivStressCompress(effective_stress_hat_compress) ;
+    const float compress_equiv_stress_hat = GetEquivStressCompress(effective_stress_hat_compress, _K_compress) ;
+    cerr << " lambda = " << lambda << ", compress_equiv_stress_hat = " << compress_equiv_stress_hat << endl ; 
     if ( compress_equiv_stress_hat < _r_compress){
     	// Step (iv): No evolution for _d_compress and plastic_strain.
     	_effective_stress_next = _effective_stress_trial ;
-    	return 1 ;
+    	cerr << " return5,Done!" << endl ; 
+    	return 1;
     }
 
     // TODO: Need evolution of plastic_strain.
+    cerr << " computeEffectiveStress>>> 5 " << endl ;
     _effective_stress_next = effective_stress_hat ; 
 
+    return 1; 
 }
 
 int 
 ConcreteDamageModel::computeCauchyStress(){
+	cerr << " computeCauchyStress 1->" << endl ;
 	tensor2<float,3,3> effective_stress_tensile ; 
 	tensor2<float,3,3> effective_stress_compress ; 
 	SplitStress(_effective_stress_next, effective_stress_tensile , effective_stress_compress) ; 
@@ -134,11 +149,15 @@ ConcreteDamageModel::computeCauchyStress(){
 
 	_r_compress = std::max(_r_compress, equiv_stress_compress) ; 
 	_r_tensile = std::max(_r_tensile, equiv_stress_tensile) ; 
+	cerr << " computeCauchyStress 2->" << endl ;
 
 	updateDamageVariables();
 
+	cerr << " computeCauchyStress 3->" << endl ;
 	_cauchy_stress(I,J) = ( 1 - _d_tensile ) * effective_stress_tensile(I,J)
-						+ ( 1 + _d_compress) * effective_stress_compress(I,J) ; 
+						+ ( 1 - _d_compress) * effective_stress_compress(I,J) ; 
+
+	return 1;
 }
 
 int ConcreteDamageModel::updateDamageVariables(){
@@ -153,13 +172,17 @@ int ConcreteDamageModel::updateDamageVariables(){
 		_d_compress = 1 - _r_0_compress / _r_compress * ( 1 - _mesh_A_compress)
 		  	- _mesh_A_compress * std::exp(_mesh_B_compress * (1 - _r_compress / _r_0_compress) )  ;
 	}
+	cerr << " _r_tensile  = " << _r_tensile   << " _d_tensile  = " << _d_tensile  << endl ; 
+	cerr << " _r_compress = " << _r_compress  << " _d_compress = " << _d_compress << endl ; 
+
+	return 1; 
 }
 
 void 
 ConcreteDamageModel::commitState(){
 
 	_commit_strain = _trial_strain ; 
-
+	_effective_stress_commit = _effective_stress_next ; 
 }
 
 smalltensor::tensor2<float,3,3> 

@@ -1,5 +1,7 @@
 #include "ConcreteDamageModel.h"
+#include <fstream>
 
+using namespace smalltensor; 
 int main(int argc, char const *argv[])
 {
 	// double bulk_modulus = (double) atof(argv[1]);
@@ -13,30 +15,30 @@ int main(int argc, char const *argv[])
 
 	int material_tag{1}  ;
 
-	float E_in = 3e9 ; 
-	float v_in = 0.2f ; 
-	float beta_in = 0.f ; 
-	float K_in = 0.f ; 
-	float r_0_tensile_in = 1.f ; 
-	float r_0_compress_in = 1.f ; 
-	float mesh_A_tensile_in = 1.f ; 
-	float mesh_A_compress_in = 1.f ; 
-	float mesh_B_compress_in = 1.f ; 
+	float E_in = 26e9 ; 
+	float v_in = 0.16f ; 
+	float beta_in = 0.59f ; // plastic deformation rate
+	float K_in = 0.49f ; 
+	float r_0_tensile_in = 300 ; 
+	float r_0_compress_in = 4000 ; 
+	float mesh_A_tensile_in = 0.1f ; 
+	float mesh_A_compress_in = 1.5f ; 
+	float mesh_B_compress_in = 0.75f ; 
 
 	auto theMaterial= new ConcreteDamageModel(
-		E_in
-		v_in
-		beta_in
-		K_in
-		r_0_tensile_in
-		r_0_compress_in
-		mesh_A_tensile_in
-		mesh_A_compress_in
+		E_in,
+		v_in,
+		beta_in,
+		K_in,
+		r_0_tensile_in,
+		r_0_compress_in,
+		mesh_A_tensile_in,
+		mesh_A_compress_in,
 		mesh_B_compress_in
 	);
 
-	// double max_strain = 1E-3 ;
-	// double incr_size = 1E-6;
+	float max_strain_in = 0.01   ;
+	float strain_incr = 1E-5  ;
 	auto stress_ret = theMaterial->getStressTensor();
 	auto strain_ret = theMaterial->getStrainTensor();
 
@@ -45,16 +47,17 @@ int main(int argc, char const *argv[])
 			<< endl ;
 
 	int Nsteps = max_strain_in/strain_incr ;
+
 	// Loading 
-	DTensor2 input_strain(3,3,0.) ;
-	for (int i = 0; i < Nsteps; ++i)
-	{
-		cout<< "--------------------------------------------------" <<endl;
-		cout<< "step " << i <<endl;
-		input_strain *= 0. ;
+	tensor2<float,3,3> input_strain ;
+	for (int i = 0; i < Nsteps; ++i){
+		cout << " -------------------------------------------------- " << endl;
+		cout << " - step " << i << endl;
+		
 		// input_strain(0,0) =  incr_size;
-		input_strain(0,1) = strain_incr / 2.;
-		input_strain(1,0) = strain_incr / 2.;
+		input_strain(0,0) = - strain_incr ;
+		// input_strain(1,1) = - strain_incr ;
+		// input_strain(2,2) = - strain_incr ;
 
 		theMaterial->setTrialStrainIncr(input_strain);
 
@@ -62,8 +65,8 @@ int main(int argc, char const *argv[])
 		stress_ret = theMaterial->getStressTensor();
 		strain_ret = theMaterial->getStrainTensor();
 
-		outfile << strain_ret(0,1)  <<"\t" 
-				<< stress_ret(0,1) <<"\t"
+		outfile << - strain_ret(0,0)  <<"\t" 
+				<< - stress_ret(0,0) <<"\t"
 				<< endl ;
 	}
 

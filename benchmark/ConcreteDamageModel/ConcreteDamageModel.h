@@ -1,5 +1,5 @@
 
-#include "../../smalltensor/smalltensor.h"
+// #include "../../smalltensor/smalltensor.h"
 #include "ConcreteDamageModel_utils.hpp"
 #include <limits>
 #include <vector>
@@ -56,6 +56,7 @@ private:
 
 	tensor2<float,3,3> _effective_stress_trial ;
 	tensor2<float,3,3> _effective_stress_next ;
+	tensor2<float,3,3> _effective_stress_commit ; 
 
 
 	tensor2<float,3,3> _cauchy_stress ;
@@ -67,7 +68,7 @@ private:
 
 	tensor2<float,3,3> _trial_strain ; 
 	tensor2<float,3,3> _commit_strain ; 
-
+	
 	// tensor2<float,3,3>         iterate_stress;                    // Iterative Stress State
 	// tensor2<float,3,3>         iterate_strain;                    // Iterative Strain State
 	// tensor2<float,3,3>         iterate_plastic_strain;            // Iterative Plastic Strain State
@@ -85,7 +86,7 @@ private:
 
 	static tensor4<float,3,3,3,3> _Ee;                    // elastic constant: 3*3*3*3 tensor
 	static tensor4<float,3,3,3,3> _D_inv;                 // elastic constant: 3*3*3*3 tensor
-	static tensor4<float,3,3,3,3> _Eep;                    // elastic constant: 3*3*3*3 tensor
+	// static tensor4<float,3,3,3,3> _Eep;                    // elastic constant: 3*3*3*3 tensor
 
 	static const tensor2<float,3,3> kronecker_delta ;// Delta 
 

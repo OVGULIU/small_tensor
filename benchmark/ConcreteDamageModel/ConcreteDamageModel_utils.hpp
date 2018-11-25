@@ -1,3 +1,5 @@
+#ifndef CONCRETEDAMAGEMODEL_UTILS_HPP_
+#define CONCRETEDAMAGEMODEL_UTILS_HPP_
 
 #include "../../smalltensor/smalltensor.h"
 using namespace smalltensor;
@@ -9,10 +11,11 @@ using namespace smalltensor;
 // Output: 3x1 eigenvalues eig3 <= eig2 << eig1
 
 // Reference: https://en.wikipedia.org/wiki/Eigenvalue_algorithm
+namespace {
 
 tensor1<float,3> GetEigenValues3(tensor2<float, 3,3> const& matrix){
-	eindex < 'i' > I;                       // Dummy or Free eindex for LTensor
-	eindex < 'j' > J;                       // Dummy or Free eindex for LTensor
+	eindex < 'i' > I; // Dummy or Free eindex for Tensor
+	eindex < 'j' > J; // Dummy or Free eindex for Tensor
 	const tensor2<float,3,3> kronecker_delta("identity");
 
 	tensor1<float,3> result ; 
@@ -70,13 +73,16 @@ float Heaviside(float value){
 
 void SplitStress(tensor2<float,3,3> const& input, 
 	tensor2<float,3,3>& tensile_part, 
-	tensor2<float,3,3>& compress_part, 
+	tensor2<float,3,3>& compress_part
 	)
 {
+	eindex < 'i' > I; // Dummy or Free eindex for Tensor
+	eindex < 'j' > J; // Dummy or Free eindex for Tensor
+	tensile_part.zero() ;
+	compress_part.zero() ; 
 
 	tensor1<float,3> eigenvalues = GetEigenValues3(input) ; 
 
-	tensile_part.zero() ;
 	tensile_part(0,0) = Macaulay(eigenvalues(0)) ; 
 	tensile_part(1,1) = Macaulay(eigenvalues(1)) ; 
 	tensile_part(2,2) = Macaulay(eigenvalues(2)) ; 
@@ -97,8 +103,18 @@ float GetEquivStressCompress(tensor2<float,3,3> const& input, float K_compress){
 				);
 
 	const float compress_equiv_stress = std::sqrt( std::sqrt(3) * 
-			(K_compress * octahedral_nomral_stress + octahedral_shear_stress)
+			( K_compress * std::fabs(octahedral_nomral_stress) + std::fabs(octahedral_shear_stress) )
 		) ; 
-
+	if ( std::isnan(compress_equiv_stress) ){
+		cerr << " ERROR! compress_equiv_stress is Nan!" << endl;
+		cerr << " K_compress=" << K_compress << ", octahedral_nomral_stress = " << octahedral_nomral_stress
+			<< ", compress_equiv_stress = " << compress_equiv_stress 
+			<< ", octahedral_shear_stress=" << octahedral_shear_stress << endl ; 
+	}
 	return compress_equiv_stress ;
 }
+
+}
+
+
+#endif // CONCRETEDAMAGEMODEL_UTILS_HPP_
