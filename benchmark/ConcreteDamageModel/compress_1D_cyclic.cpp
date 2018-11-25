@@ -2,6 +2,25 @@
 #include <fstream>
 
 using namespace smalltensor; 
+
+
+void add_loading(ConcreteDamageModel* theMaterial, 
+		tensor2<float,3,3> const& input_strain, 
+		std::ofstream& outfile
+	)
+{
+	theMaterial->setTrialStrainIncr(input_strain);
+
+	theMaterial->commitState();
+	auto stress_ret = theMaterial->getStressTensor();
+	auto strain_ret = theMaterial->getStrainTensor();
+
+	outfile << - strain_ret(0,0)  <<"\t" 
+			<< - stress_ret(0,0) <<"\t"
+			<< endl ;
+}
+
+
 int main(int argc, char const *argv[])
 {
 	// double bulk_modulus = (double) atof(argv[1]);
@@ -19,7 +38,7 @@ int main(int argc, char const *argv[])
 	float v_in = 0.16f ; 
 	float beta_in = 0.59f ; // plastic deformation rate
 	float K_in = 0.49f ; 
-	float r_0_tensile_in = 300 ; 
+	float r_0_tensile_in = 30 ; 
 	float r_0_compress_in = 4000 ; 
 	float mesh_A_tensile_in = 0.1f ; 
 	float mesh_A_compress_in = 1.5f ; 
@@ -37,8 +56,8 @@ int main(int argc, char const *argv[])
 		mesh_B_compress_in
 	);
 
-	float max_strain_in = 0.01   ;
-	float strain_incr = 1E-5  ;
+	float max_strain_in = 0.003   ;
+	float strain_incr = 1E-6  ;
 	auto stress_ret = theMaterial->getStressTensor();
 	auto strain_ret = theMaterial->getStrainTensor();
 
@@ -50,24 +69,29 @@ int main(int argc, char const *argv[])
 
 	// Loading 
 	tensor2<float,3,3> input_strain ;
+	input_strain(0,0) = - strain_incr ;
 	for (int i = 0; i < Nsteps; ++i){
 		cout << " -------------------------------------------------- " << endl;
 		cout << " - step " << i << endl;
-		
-		// input_strain(0,0) =  incr_size;
+		add_loading(theMaterial, input_strain, outfile) ; 
+	}
+
+	const int Nloop = 10 ;  
+	for (int loop = 0; loop < Nloop; ++loop){
+		// unloading 
+		input_strain(0,0) = strain_incr ;
+		for (int i = 0; i < Nsteps * 0.55 ; ++i){
+			cout << " -----unloading--------------------------------------- " << endl;
+			cout << " - step " << i << endl;
+			add_loading(theMaterial, input_strain, outfile) ; 
+		}
+		// reloading 
 		input_strain(0,0) = - strain_incr ;
-		// input_strain(1,1) = - strain_incr ;
-		// input_strain(2,2) = - strain_incr ;
-
-		theMaterial->setTrialStrainIncr(input_strain);
-
-		theMaterial->commitState();
-		stress_ret = theMaterial->getStressTensor();
-		strain_ret = theMaterial->getStrainTensor();
-
-		outfile << - strain_ret(0,0)  <<"\t" 
-				<< - stress_ret(0,0) <<"\t"
-				<< endl ;
+		for (int i = 0; i < Nsteps; ++i){
+			cout << " -----reloading--------------------------------------- " << endl;
+			cout << " - step " << i << endl;
+			add_loading(theMaterial, input_strain, outfile) ; 
+		}
 	}
 
 	// Done the experiments and Clean
