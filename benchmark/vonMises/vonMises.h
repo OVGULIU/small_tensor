@@ -2,6 +2,7 @@
 #define OPENUS_FE_MATERIAL_vonMises_H_
 
 #include <smalltensor/smalltensor.h>
+#include <cmath>
 
 namespace openus{
 
@@ -15,7 +16,23 @@ public:
 	void Initialize() ; 
 	void Update() ; 
 
+	int SetTrialStrainIncr(Mat33 const& strain_incr) ;
 	Tensor4 const& GetStiffnessTensor() const ;
+	void CommitState();
+
+	int compute_stress(Mat33 const& strain_incr) ;
+	float yield_surface_val(Mat33 const& stress, Mat33 const& back_stress, float radius) const ;
+	Mat33 df_dsigma(Mat33 const& stress, Mat33 const& back_stress) const ;
+	float hardening_ksi_h(Mat33 const& stress, Mat33 const& back_stress, Mat33 const& m) const ;
+	float isotropic_derivative(Mat33 const& m) const ;
+	Mat33 kinematic_derivative(Mat33 const& m) const ;
+
+	float _E = 1e3 ;
+	float _nu = 0.0 ;
+	float _isotropic_harden_rate = 3 ;
+	float _kinematic_harden_rate = 4 ;
+	float _iter_yf_radius = 2 ; 
+	float _commit_yf_radius = 2 ; 
 
 	Tensor4 _stiff_tensor ;
 
