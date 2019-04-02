@@ -14,30 +14,30 @@ vonMises::vonMises()
 
 void 
 vonMises::Initialize() {
-	_stiff_tensor *= 0. ;
+	_stiff_elastic *= 0. ;
 	auto mu = _E / ( 2 * ( 1 + _nu ) );
 	auto lambda = ( _nu * _E ) / ( ( 1 + _nu ) * ( 1 - 2 * _nu ) );
-	_stiff_tensor( 0, 0, 0, 0 ) = lambda + 2 * mu;
-	_stiff_tensor( 0, 0, 1, 1 ) = lambda;
-	_stiff_tensor( 0, 0, 2, 2 ) = lambda;
-	_stiff_tensor( 0, 1, 0, 1 ) = mu;
-	_stiff_tensor( 0, 1, 1, 0 ) = mu;
-	_stiff_tensor( 0, 2, 0, 2 ) = mu;
-	_stiff_tensor( 0, 2, 2, 0 ) = mu;
-	_stiff_tensor( 1, 0, 0, 1 ) = mu;
-	_stiff_tensor( 1, 0, 1, 0 ) = mu;
-	_stiff_tensor( 1, 1, 0, 0 ) = lambda;
-	_stiff_tensor( 1, 1, 1, 1 ) = lambda + 2 * mu;
-	_stiff_tensor( 1, 1, 2, 2 ) = lambda;
-	_stiff_tensor( 1, 2, 1, 2 ) = mu;
-	_stiff_tensor( 1, 2, 2, 1 ) = mu;
-	_stiff_tensor( 2, 0, 0, 2 ) = mu;
-	_stiff_tensor( 2, 0, 2, 0 ) = mu;
-	_stiff_tensor( 2, 1, 1, 2 ) = mu;
-	_stiff_tensor( 2, 1, 2, 1 ) = mu;
-	_stiff_tensor( 2, 2, 0, 0 ) = lambda;
-	_stiff_tensor( 2, 2, 1, 1 ) = lambda;
-	_stiff_tensor( 2, 2, 2, 2 ) = lambda + 2 * mu;
+	_stiff_elastic( 0, 0, 0, 0 ) = lambda + 2 * mu;
+	_stiff_elastic( 0, 0, 1, 1 ) = lambda;
+	_stiff_elastic( 0, 0, 2, 2 ) = lambda;
+	_stiff_elastic( 0, 1, 0, 1 ) = mu;
+	_stiff_elastic( 0, 1, 1, 0 ) = mu;
+	_stiff_elastic( 0, 2, 0, 2 ) = mu;
+	_stiff_elastic( 0, 2, 2, 0 ) = mu;
+	_stiff_elastic( 1, 0, 0, 1 ) = mu;
+	_stiff_elastic( 1, 0, 1, 0 ) = mu;
+	_stiff_elastic( 1, 1, 0, 0 ) = lambda;
+	_stiff_elastic( 1, 1, 1, 1 ) = lambda + 2 * mu;
+	_stiff_elastic( 1, 1, 2, 2 ) = lambda;
+	_stiff_elastic( 1, 2, 1, 2 ) = mu;
+	_stiff_elastic( 1, 2, 2, 1 ) = mu;
+	_stiff_elastic( 2, 0, 0, 2 ) = mu;
+	_stiff_elastic( 2, 0, 2, 0 ) = mu;
+	_stiff_elastic( 2, 1, 1, 2 ) = mu;
+	_stiff_elastic( 2, 1, 2, 1 ) = mu;
+	_stiff_elastic( 2, 2, 0, 0 ) = lambda;
+	_stiff_elastic( 2, 2, 1, 1 ) = lambda;
+	_stiff_elastic( 2, 2, 2, 2 ) = lambda + 2 * mu;
 }
 
 void 
@@ -47,7 +47,7 @@ vonMises::Update() {
 
 vonMises::Tensor4 const&
 vonMises::GetStiffnessTensor() const {
-	return _stiff_tensor ;
+	return _stiff_elastic ;
 }
 
 int 
@@ -59,7 +59,7 @@ vonMises::SetTrialStrainIncr(Mat33 const& strain_incr){
 int
 vonMises::compute_stress(Mat33 const& strain_incr){
 	Mat33 stress_incr;
-	stress_incr(I,J) = _stiff_tensor(I,J,K,L) * strain_incr(K,L) ;
+	stress_incr(I,J) = _stiff_elastic(I,J,K,L) * strain_incr(K,L) ;
 
 	Mat33 predict_stress ;
 	predict_stress(I,J) = _commit_stress(I,J) + stress_incr(I,J) ;
@@ -70,17 +70,28 @@ vonMises::compute_stress(Mat33 const& strain_incr){
 
 	if ( (yf_val_start <= 0.0 && yf_val_end <= 0.0) || yf_val_start > yf_val_end ){
 		// elastic
+		_stiff_plastic = _stiff_elastic ;
 		return 0 ;
 	}else{
 		// plastic
 		auto n = df_dsigma(_iter_stress, _iter_back_stress) ;
 		auto m = n ;
 		float hardening = hardening_ksi_h( _iter_stress , _iter_back_stress, m ) ;
-		float denominator = n(I,J) * _stiff_tensor(I,J,K,L) * m(K,L) - hardening ;
+		float denominator = n(I,J) * _stiff_elastic(I,J,K,L) * m(K,L) - hardening ;
 		float dLambda = yf_val_end /denominator ;
-		_iter_stress(I,J) = predict_stress(I,J) - dLambda * _stiff_tensor(I,J,K,L) * m(K,L) ;
+		_iter_stress(I,J) = predict_stress(I,J) - dLambda * _stiff_elastic(I,J,K,L) * m(K,L) ;
 		// internal variables evolve.
 		evolve_internal_variables(dLambda, _iter_back_stress, _iter_yf_radius, m) ;
+		_stiff_plastic(I,J,K,L) = _stiff_elastic(I,J,K,L) - (_stiff_elastic(I,J,P,Q) * m(P,Q) ) * (n(X,Y) * _stiff_elastic(X,Y,K,L)) / denominator ;
+
+		// // ---------------------------------------------------------------------------------------------
+		// // debug & verifiy: results: difference is big in the transition step between elastic and plastic.
+		// Mat33 test_incr_A;
+		// test_incr_A(I,J) = _iter_stress(I,J) - _commit_stress(I,J) ;
+		// Mat33 test_incr_B;
+		// test_incr_B(I,J) = _stiff_plastic(I,J,K,L) * strain_incr(K,L) ;
+		// std::cout << " test_incr_A(0,1) = " << test_incr_A(0,1) << ", stiff " << test_incr_B(0,1) << ", diff = " <<  test_incr_A(0,1) -  test_incr_B(0,1) << std::endl ;
+		// // ---------------------------------------------------------------------------------------------
 	}
 	return 0;
 }

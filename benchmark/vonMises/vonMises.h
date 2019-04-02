@@ -37,7 +37,8 @@ public:
 	float _iter_yf_radius = 2 ; 
 	float _commit_yf_radius = 2 ; 
 
-	Tensor4 _stiff_tensor ;
+	Tensor4 _stiff_elastic ;
+	Tensor4 _stiff_plastic ;
 
 	Mat33 _iter_stress ;
 	Mat33 _iter_strain ;
@@ -59,6 +60,8 @@ public:
 	smalltensor::eindex<'L'> L;
 	smalltensor::eindex<'P'> P;
 	smalltensor::eindex<'Q'> Q;
+	smalltensor::eindex<'X'> X;
+	smalltensor::eindex<'Y'> Y;
 
 };
 
