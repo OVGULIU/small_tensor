@@ -33,7 +33,6 @@ public:
 	float _E = 1e3 ;
 	float _nu = 0.0 ;
 	float _isotropic_harden_rate = 3 * 0 ;
-	float _kinematic_harden_rate = 4 * 10 ;
 	float _iter_yf_radius = 2 ; 
 	float _commit_yf_radius = 2 ; 
 
@@ -50,8 +49,7 @@ public:
 	Mat33 _commit_plastic_strain ;
 	Mat33 _commit_back_stress ;
 
-	static const Mat33 _zero_strain ;
-	static const Mat33 _zero_stress ;
+	static const Mat33 zero_mat33 ;
 	static const Mat33 kronecker_delta ;
 
 	smalltensor::eindex<'I'> I;

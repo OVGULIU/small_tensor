@@ -1,27 +1,27 @@
-// #ifndef OPENUS_FE_MATERIAL_vonMisesLinearHardening_H_
-// #define OPENUS_FE_MATERIAL_vonMisesLinearHardening_H_
+#ifndef OPENUS_FE_MATERIAL_vonMisesLinearHardening_H_
+#define OPENUS_FE_MATERIAL_vonMisesLinearHardening_H_
 
 // #include <openus/fe/material/FEMaterialBase.h>
+#include "vonMises.h"
 
-// namespace openus{
+namespace openus{
 
+class vonMisesLinearHardening: public vonMises
+{
+public:
+	vonMisesLinearHardening();
+	// void Initialize() ; 
+	// void Update() ; 
 
-// class vonMisesLinearHardening: public FEMaterialBase
-// {
-// public:
-// 	vonMisesLinearHardening(entt::registry<>* registry);
-// 	void Initialize() ; 
-// 	void Update() ; 
+	Mat33 kinematic_derivative(Mat33 const& m, Mat33 const& back_stress) const override final;
 
-// 	math::Tensor4f const& GetStiffnessTensor() const ;
+	float _kinematic_harden_rate = 4 * 10 ;
 
-// 	math::Tensor4f _stiff_tensor ;
-
-// };
-
-
-// }
+};
 
 
-// #endif
+}
+
+
+#endif
 

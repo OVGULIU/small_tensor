@@ -3,8 +3,7 @@
 
 namespace openus{
 
-const vonMises::Mat33 vonMises::_zero_strain ;
-const vonMises::Mat33 vonMises::_zero_stress ;
+const vonMises::Mat33 vonMises::zero_mat33 ;
 const vonMises::Mat33 vonMises::kronecker_delta("identity") ;
 
 vonMises::vonMises()
@@ -150,10 +149,8 @@ vonMises::isotropic_derivative(Mat33 const& m) const {
 
 vonMises::Mat33 
 vonMises::kinematic_derivative(Mat33 const& m, Mat33 const& back_stress) const {
-	Mat33 sol; 
-	float mm = - 1./3. * ( m(0,0) + m(1,1) + m(2,2) ) ;
-	sol(I,J) = _kinematic_harden_rate * ( m(I,J) + mm * kronecker_delta(I,J) ) ;
-	return sol ;
+	std::cerr << " vonMises::kinematic_derivative should never be called! Subclass's responsibility! " << std::endl ;
+	return zero_mat33;
 }
 
 void
