@@ -1,27 +1,27 @@
-// #ifndef OPENUS_FE_MATERIAL_vonMisesArmstrongFrederick_H_
-// #define OPENUS_FE_MATERIAL_vonMisesArmstrongFrederick_H_
+#ifndef OPENUS_FE_MATERIAL_vonMisesArmstrongFrederick_H_
+#define OPENUS_FE_MATERIAL_vonMisesArmstrongFrederick_H_
 
 // #include <openus/fe/material/FEMaterialBase.h>
+#include "vonMises.h"
 
-// namespace openus{
+namespace openus{
 
+class vonMisesArmstrongFrederick: public vonMises
+{
+public:
+	vonMisesArmstrongFrederick();
+	// void Initialize() ; 
+	// void Update() ; 
 
-// class vonMisesArmstrongFrederick: public FEMaterialBase
-// {
-// public:
-// 	vonMisesArmstrongFrederick(entt::registry<>* registry);
-// 	void Initialize() ; 
-// 	void Update() ; 
+	Mat33 kinematic_derivative(Mat33 const& m, Mat33 const& back_stress) const override final;
 
-// 	math::Tensor4f const& GetStiffnessTensor() const ;
-
-// 	math::Tensor4f _stiff_tensor ;
-
-// };
-
-
-// }
+	float _AF_ha = 3e3 ; 
+	float _AF_cr = 500 ;	
+};
 
 
-// #endif
+}
+
+
+#endif
 

@@ -1,4 +1,5 @@
 #include "vonMises.h"
+#include "vonMisesArmstrongFrederick.h"
 #include <fstream>
 #include <memory>
 
@@ -10,7 +11,7 @@ int main(int argc, char const *argv[])
 	ofstream outfile;
 	outfile.open("strain_stress.txt");
 
-	auto material = std::make_shared<vonMises>() ;
+	auto material = std::make_shared<vonMisesArmstrongFrederick>() ;
 	material->Initialize();
 
 	tensor2<float,3,3> input_strain ;

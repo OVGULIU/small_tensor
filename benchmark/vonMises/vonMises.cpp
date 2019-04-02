@@ -126,8 +126,8 @@ vonMises::hardening_ksi_h(Mat33 const& stress, Mat33 const& back_stress, Mat33 c
 	sol = - sqrt(2./3.) * isotropic_derivative(m) ;
 
 	// kinematic
-	Mat33 alpha_deriv = kinematic_derivative(m) ;
-	sol = - s_minus_alpha(I,J) / denominator * kinematic_derivative(m)(I,J) ; 
+	Mat33 alpha_deriv = kinematic_derivative(m, back_stress) ;
+	sol = - s_minus_alpha(I,J) / denominator * alpha_deriv(I,J) ; 
 	return sol ;
 }
 
@@ -138,7 +138,7 @@ vonMises::isotropic_derivative(Mat33 const& m) const {
 }
 
 vonMises::Mat33 
-vonMises::kinematic_derivative(Mat33 const& m) const {
+vonMises::kinematic_derivative(Mat33 const& m, Mat33 const& back_stress) const {
 	Mat33 sol; 
 	float mm = - 1./3. * ( m(0,0) + m(1,1) + m(2,2) ) ;
 	sol(I,J) = _kinematic_harden_rate * ( m(I,J) + mm * kronecker_delta(I,J) ) ;
@@ -148,7 +148,7 @@ vonMises::kinematic_derivative(Mat33 const& m) const {
 void
 vonMises::evolve_internal_variables(float dLambda, 
 	Mat33& _iter_back_stress, float & _iter_yf_radius, Mat33 const& m) const {
-	_iter_back_stress(I,J) = _iter_back_stress(I,J) + dLambda * kinematic_derivative(m)(I,J) ;
+	_iter_back_stress(I,J) = _iter_back_stress(I,J) + dLambda * kinematic_derivative(m, _iter_back_stress)(I,J) ;
 	_iter_yf_radius += dLambda * isotropic_derivative(m) ;
 }
 

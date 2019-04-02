@@ -8,10 +8,11 @@ namespace openus{
 
 class vonMises
 {
-typedef smalltensor::tensor2<float,3,3> Mat33 ; 
-typedef smalltensor::tensor4<float,3,3,3,3> Tensor4 ;
 
 public:
+	typedef smalltensor::tensor2<float,3,3> Mat33 ; 
+	typedef smalltensor::tensor4<float,3,3,3,3> Tensor4 ;
+
 	vonMises();
 	void Initialize() ; 
 	void Update() ; 
@@ -25,14 +26,14 @@ public:
 	Mat33 df_dsigma(Mat33 const& stress, Mat33 const& back_stress) const ;
 	float hardening_ksi_h(Mat33 const& stress, Mat33 const& back_stress, Mat33 const& m) const ;
 	float isotropic_derivative(Mat33 const& m) const ;
-	Mat33 kinematic_derivative(Mat33 const& m) const ;
+	virtual Mat33 kinematic_derivative(Mat33 const& m, Mat33 const& back_stress) const ;
 	void evolve_internal_variables(float dLambda, 
 		Mat33& _iter_back_stress, float & _iter_yf_radius, Mat33 const& m) const ;
 
 	float _E = 1e3 ;
 	float _nu = 0.0 ;
-	float _isotropic_harden_rate = 3 * 10 ;
-	float _kinematic_harden_rate = 4 * 0 ;
+	float _isotropic_harden_rate = 3 * 0 ;
+	float _kinematic_harden_rate = 4 * 10 ;
 	float _iter_yf_radius = 2 ; 
 	float _commit_yf_radius = 2 ; 
 
