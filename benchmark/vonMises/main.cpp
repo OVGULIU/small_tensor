@@ -22,9 +22,26 @@ int main(int argc, char const *argv[])
 
 	constexpr int Nsteps = 20 ;
 
-	// std::cout << material->_iter_strain(0,1) << " " << material->_iter_stress(0,1) << std::endl; 
-	// outfile << material->_iter_strain(0,1) << " " << material->_iter_stress(0,1) << std::endl; 
+	// loading
+	std::cout << material->_iter_strain(0,1) << " " << material->_iter_stress(0,1) << std::endl; 
+	outfile << material->_iter_strain(0,1) << " " << material->_iter_stress(0,1) << std::endl; 
 	for (int i = 0; i < Nsteps; ++i)	{
+		material->SetTrialStrainIncr(input_strain) ;
+		material->CommitState();
+		std::cout << material->_iter_strain(0,1) << " " << material->_iter_stress(0,1) << std::endl; 
+		outfile << material->_iter_strain(0,1) << " " << material->_iter_stress(0,1) << std::endl; 
+	}
+	// unloading
+	input_strain *= -1 ;
+	for (int i = 0; i < 2*Nsteps; ++i)	{
+		material->SetTrialStrainIncr(input_strain) ;
+		material->CommitState();
+		std::cout << material->_iter_strain(0,1) << " " << material->_iter_stress(0,1) << std::endl; 
+		outfile << material->_iter_strain(0,1) << " " << material->_iter_stress(0,1) << std::endl; 
+	}
+	// reloading
+	input_strain *= -1 ;
+	for (int i = 0; i < 2*Nsteps; ++i)	{
 		material->SetTrialStrainIncr(input_strain) ;
 		material->CommitState();
 		std::cout << material->_iter_strain(0,1) << " " << material->_iter_stress(0,1) << std::endl; 

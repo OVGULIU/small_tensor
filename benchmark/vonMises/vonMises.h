@@ -31,8 +31,8 @@ public:
 
 	float _E = 1e3 ;
 	float _nu = 0.0 ;
-	float _isotropic_harden_rate = 3 ;
-	float _kinematic_harden_rate = 4 ;
+	float _isotropic_harden_rate = 3 * 10 ;
+	float _kinematic_harden_rate = 4 * 0 ;
 	float _iter_yf_radius = 2 ; 
 	float _commit_yf_radius = 2 ; 
 
