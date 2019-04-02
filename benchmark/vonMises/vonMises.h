@@ -26,6 +26,8 @@ public:
 	float hardening_ksi_h(Mat33 const& stress, Mat33 const& back_stress, Mat33 const& m) const ;
 	float isotropic_derivative(Mat33 const& m) const ;
 	Mat33 kinematic_derivative(Mat33 const& m) const ;
+	void evolve_internal_variables(float dLambda, 
+		Mat33& _iter_back_stress, float & _iter_yf_radius, Mat33 const& m) const ;
 
 	float _E = 1e3 ;
 	float _nu = 0.0 ;

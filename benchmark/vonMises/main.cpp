@@ -22,8 +22,8 @@ int main(int argc, char const *argv[])
 
 	constexpr int Nsteps = 20 ;
 
-	std::cout << material->_iter_strain(0,1) << " " << material->_iter_stress(0,1) << std::endl; 
-	outfile << material->_iter_strain(0,1) << " " << material->_iter_stress(0,1) << std::endl; 
+	// std::cout << material->_iter_strain(0,1) << " " << material->_iter_stress(0,1) << std::endl; 
+	// outfile << material->_iter_strain(0,1) << " " << material->_iter_stress(0,1) << std::endl; 
 	for (int i = 0; i < Nsteps; ++i)	{
 		material->SetTrialStrainIncr(input_strain) ;
 		material->CommitState();

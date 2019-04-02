@@ -80,7 +80,7 @@ vonMises::compute_stress(Mat33 const& strain_incr){
 		float dLambda = yf_val_end /denominator ;
 		_iter_stress(I,J) = predict_stress(I,J) - dLambda * _stiff_tensor(I,J,K,L) * m(K,L) ;
 		// internal variables evolve.
-
+		evolve_internal_variables(dLambda, _iter_back_stress, _iter_yf_radius, m) ;
 	}
 	return 0;
 }
@@ -143,6 +143,13 @@ vonMises::kinematic_derivative(Mat33 const& m) const {
 	float mm = - 1./3. * ( m(0,0) + m(1,1) + m(2,2) ) ;
 	sol(I,J) = _kinematic_harden_rate * ( m(I,J) + mm * kronecker_delta(I,J) ) ;
 	return sol ;
+}
+
+void
+vonMises::evolve_internal_variables(float dLambda, 
+	Mat33& _iter_back_stress, float & _iter_yf_radius, Mat33 const& m) const {
+	_iter_back_stress(I,J) = _iter_back_stress(I,J) + dLambda * kinematic_derivative(m)(I,J) ;
+	_iter_yf_radius += dLambda * isotropic_derivative(m) ;
 }
 
 void 
